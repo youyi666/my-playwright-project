@@ -1,0 +1,26 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "https://sky.viomi.com.cn",
+      "localStorage": [
+        {
+          "name": "SU_LOGIN_TOKEN",
+          "value": "vTQ8mkcCeQ4dNHAF"
+        },
+        {
+          "name": "TOKEN",
+          "value": "eyJhbGciOiJIUzUxMiJ9.eyJ0b2tlbl91c2VyX2lkIjoxNTYyLCJ0b2tlbl9jcmVhdGVfdGltZSI6MTc1NjE4NDE1MDEyOSwic3ViIjoibHVvanVuc2hlbmdAdmlvbWkuY29tIiwiVklPTUlfVVNFUl9JRCI6NjEzNjEsInRva2VuX3VzZXJfbmFtZSI6Imx1b2p1bnNoZW5nQHZpb21pLmNvbSIsIlZJT01JLUF1dGhvcml6YXRpb24iOiJ2VFE4bWtjQ2VRNGROSEFGIiwiZXhwIjoxNzU2MjE0NTkwLCJ0b2tlbl91c2VyX3Bhc3N3b3JkIjoiIn0.ucDkTXuZgsnhNGoF66FDM-rMYnxn-c3H9pDelM9sECiybRDYpnZUUJqeC3nHKmlk8j8hSzJnGTY1W2L763Nkmw"
+        },
+        {
+          "name": "TOKEN_EXPIRE",
+          "value": "1756212951143"
+        },
+        {
+          "name": "loginUser",
+          "value": "{\"id\":1562,\"username\":\"luojunsheng@viomi.com\",\"avatar\":null,\"email\":\"luojunsheng@viomi.com\",\"admin\":false,\"name\":\"罗俊生\",\"description\":null,\"department\":null}"
+        }
+      ]
+    }
+  ]
+}
