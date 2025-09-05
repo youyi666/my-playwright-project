@@ -7,3 +7,4 @@ node_modules/
 /playwright/.cache/
 auth.json
 tests\auth.json
+jd-setup-auth.js
