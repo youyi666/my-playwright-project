@@ -1,16 +1,11 @@
-2025/09/01-09:15:50.146 5dcc Creating DB C:\Users\Administrator\my-playwright-project\auth-profile\Default\Local Storage\leveldb since it was missing.
-2025/09/01-09:15:50.191 5dcc Reusing MANIFEST C:\Users\Administrator\my-playwright-project\auth-profile\Default\Local Storage\leveldb/MANIFEST-000001
-2025/09/01-09:16:10.437 49dc Level-0 table #5: started
-2025/09/01-09:16:10.454 49dc Level-0 table #5: 527182 bytes OK
-2025/09/01-09:16:10.459 49dc Delete type=0 #3
-2025/09/01-09:16:13.935 49dc Level-0 table #7: started
-2025/09/01-09:16:13.943 49dc Level-0 table #7: 206433 bytes OK
-2025/09/01-09:16:13.947 49dc Delete type=0 #4
-2025/09/01-09:16:50.219 49dc Level-0 table #9: started
-2025/09/01-09:16:50.228 49dc Level-0 table #9: 105324 bytes OK
-2025/09/01-09:16:50.233 49dc Delete type=0 #6
-2025/09/01-09:17:24.005 49dc Level-0 table #11: started
-2025/09/01-09:17:24.028 49dc Level-0 table #11: 639527 bytes OK
-2025/09/01-09:17:24.033 49dc Delete type=0 #8
-2025/09/01-09:17:40.297 49dc Level-0 table #13: started
-2025/09/01-09:17:40.313 49dc Level-0 table #13: 186850 bytes OK
+2025/09/08-09:32:08.500 2eec Creating DB C:\Users\Administrator\my-playwright-project\auth-profile\Default\Local Storage\leveldb since it was missing.
+2025/09/08-09:32:08.587 2eec Reusing MANIFEST C:\Users\Administrator\my-playwright-project\auth-profile\Default\Local Storage\leveldb/MANIFEST-000001
+2025/09/08-09:32:36.028 2280 Level-0 table #5: started
+2025/09/08-09:32:36.038 2280 Level-0 table #5: 336149 bytes OK
+2025/09/08-09:32:36.041 2280 Delete type=0 #3
+2025/09/08-09:32:48.026 2280 Level-0 table #7: started
+2025/09/08-09:32:48.033 2280 Level-0 table #7: 103271 bytes OK
+2025/09/08-09:32:48.042 2280 Delete type=0 #4
+2025/09/08-09:32:51.518 2280 Level-0 table #9: started
+2025/09/08-09:32:51.525 2280 Level-0 table #9: 103302 bytes OK
+2025/09/08-09:32:51.529 2280 Delete type=0 #6

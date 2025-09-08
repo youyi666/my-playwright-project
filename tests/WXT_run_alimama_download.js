@@ -56,7 +56,7 @@ async function pollForReportReady(page, timeout = 600000, interval = 5000) {
         // --- 1. 启动浏览器并加载登录状态 ---
         console.log('正在静默启动浏览器...');
         browser = await chromium.launch({
-            headless: true // 静默运行
+            headless: false // 静默运行
         });
 
         // 从 auth.json 文件加载登录状态
