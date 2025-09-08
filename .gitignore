@@ -6,5 +6,6 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 auth.json
-tests\auth.json
+jd_yp_taobao-scraper\auth.json
 jd-setup-auth.js
+auth.json

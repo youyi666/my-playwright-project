@@ -43,6 +43,7 @@ const DESTINATION_MAP = {
     "商品报表_": "Z:/天猫生意参谋/推广_商品数据",
     "【生意参谋平台】商品_全部_": "Z:/天猫生意参谋/商品_商品排行",
     "products_": "Z:/平台价格监控/Results",
+    "拼多多商品销售流量_": "Z:/sky.viomi.com.cn/运营分析/平台获取-商品销售流量/拼多多",
 };
 
 const CENTRAL_DB_PATH = 'Z:/天猫生意参谋/TmallDataCenter.db';
@@ -170,26 +171,28 @@ class FileProcessor {
             };
             
             const processedData = rawData.map(rawRow => {
-                const cleanRow = {};
-                for (const key in rawRow) {
-                    cleanRow[key.trim()] = rawRow[key];
-                }
-
+                // 步骤 1: 创建一个干净的行副本，所有文件都先经过这一步
                 const finalRow = {};
-                
-                for (const key in cleanRow) {
-                    if (key !== '主体ID' && key !== '日期') {
-                        finalRow[key] = cleanRow[key];
-                    }
+                for (const key in rawRow) {
+                    finalRow[key.trim()] = rawRow[key];
                 }
 
+                // 步骤 2: 只对"商品报表_"类型的文件执行特殊的列重命名
                 if (fileKey === "商品报表_") {
-                    finalRow['商品ID'] = cleanRow['主体ID'];
-                    finalRow['统计日期'] = cleanRow['日期'];
+                    finalRow['商品ID'] = finalRow['主体ID'];
+                    delete finalRow['主体ID']; // 删除旧列
+                    finalRow['统计日期'] = finalRow['日期'];
+                    delete finalRow['日期']; // 删除旧列
                 }
 
+                // 步骤 3: 兼容地格式化日期列
+                // 如果存在'统计日期'列（针对"商品报表_"），就格式化它
                 if (finalRow['统计日期']) {
                     finalRow['统计日期'] = formatDate(finalRow['统计日期']);
+                } 
+                // 否则，如果存在'日期'列（针对拼多多等其他文件），就格式化它
+                else if (finalRow['日期']) {
+                    finalRow['日期'] = formatDate(finalRow['日期']);
                 }
 
                 const idColumns = ['商品ID', '主商品ID'];
@@ -253,7 +256,18 @@ class FileProcessor {
                     this.log.errors.push({ filename: path.basename(xlsxPath), error: `文件列数不足，无法创建联合主键。` });
                     primaryKeys = [sanitizedHeaders[0]];
                 } 
-
+            } else if (fileKey ==="拼多多商品销售流量_") { // 步骤 1: 添加新的条件，判断文件名是否以“拼多多”开头
+    
+                // 步骤 2: 安全检查，确保文件至少有两列
+                if (sanitizedHeaders.length >= 2) {
+                    const pk1 = sanitizedHeaders[0]; // 获取清理后的第一列名
+                    const pk2 = sanitizedHeaders[1]; // 获取清理后的第二列名
+                    primaryKeys = [pk1, pk2];         // 将它们设置为联合主键
+                } else {
+                    // 如果文件列数不足2，则记录一个错误，并回退到默认的单主键行为
+                    this.log.errors.push({ filename: path.basename(xlsxPath), error: `“拼多多”文件列数不足两列，无法创建联合主键。` });
+                    primaryKeys = [sanitizedHeaders[0]]; // 使用第一列作为备用主键
+                }
             } else {
                  primaryKeys = [sanitizedHeaders[0]];
             }
