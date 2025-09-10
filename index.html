@@ -2,68 +2,100 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>文件处理中</title>
+    <title>文件处理器</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background-color: #f0f2f5;
             color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
             padding: 20px;
-            box-sizing: border-box;
+            text-align: center;
         }
         .container {
-            width: 100%;
-            max-width: 500px;
-            background: #fff;
+            background: white;
             padding: 30px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            text-align: center;
+            max-width: 500px;
+            margin: auto;
         }
-        #status {
-            margin-bottom: 15px;
-            font-size: 16px;
-            min-height: 24px;
-            word-wrap: break-word;
+        h1 {
+            color: #1a73e8;
+            margin-top: 0;
         }
         progress {
             width: 100%;
             height: 20px;
             border-radius: 10px;
-            overflow: hidden;
-        }
-        progress::-webkit-progress-bar {
-            background-color: #e0e0e0;
-        }
-        progress::-webkit-progress-value {
-            background-color: #4caf50;
-            transition: width 0.2s ease-in-out;
-        }
-        #report {
-            display: none;
             margin-top: 20px;
+        }
+        #message {
+            margin-top: 15px;
+            font-size: 1em;
+            color: #5f6368;
+            min-height: 20px;
+        }
+        #log-container {
+            margin-top: 25px;
             text-align: left;
-            white-space: pre-wrap;
             background-color: #fafafa;
-            padding: 15px;
+            border: 1px solid #e0e0e0;
             border-radius: 4px;
-            border: 1px solid #ddd;
+            padding: 15px;
             max-height: 200px;
             overflow-y: auto;
+            display: none; /* 默认隐藏 */
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.9em;
+            margin: 0;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h3 id="status">正在等待您的操作...</h3>
-        <progress id="progressBar" value="0" max="100"></progress>
-        <pre id="report"></pre>
+        <h1>文件处理程序</h1>
+        <p>等待后台指令...</p>
+        <progress id="progress-bar" value="0" max="100"></progress>
+        <div id="message">等待您的操作...</div>
+        <div id="log-container">
+            <h3>处理报告:</h3>
+            <pre id="log-content"></pre>
+        </div>
     </div>
-    <script src="./renderer.js"></script>
+
+    <script>
+        // 1. 引入Electron的ipcRenderer模块，用于前后台通信
+        const { ipcRenderer } = require('electron');
+
+        // 2. 获取界面上用于显示进度的元素
+        const progressBar = document.getElementById('progress-bar');
+        const messageDiv = document.getElementById('message');
+        const logContainer = document.getElementById('log-container');
+        const logContent = document.getElementById('log-content');
+
+        // 3. 设置监听器：接收来自后台的“进度更新”信号
+        ipcRenderer.on('progress-update', (event, { progress, message }) => {
+            progressBar.value = progress;
+            messageDiv.innerText = message;
+        });
+
+        // 4. 设置监听器：接收来自后台的“处理完成”信号
+        ipcRenderer.on('processing-complete', (event, log) => {
+            progressBar.value = 100;
+            messageDiv.innerText = '所有任务处理完成！';
+            
+            // 格式化并显示最终的日志
+            const formattedLog = JSON.stringify(log, null, 2);
+            logContent.textContent = formattedLog;
+            logContainer.style.display = 'block'; // 显示日志容器
+        });
+
+        // 5. 【核心】一切准备就绪后，向前台发送“我已经准备好了”的信号
+        ipcRenderer.send('ui-ready');
+    </script>
 </body>
 </html>

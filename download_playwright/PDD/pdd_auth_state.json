@@ -1,0 +1,262 @@
+{
+  "cookies": [
+    {
+      "name": "webp",
+      "value": "true",
+      "domain": "mms.pinduoduo.com",
+      "path": "/login",
+      "expires": 1759979555,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_nano_fp",
+      "value": "XpmynqXJnqdyn0Tjl9_I2JV8hQxpqCzHHd8WyyVD",
+      "domain": "yingxiao.pinduoduo.com",
+      "path": "/",
+      "expires": 1791947554.386914,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "api_uid",
+      "value": "CiaOT2i/myLAzQCoofxqAg==",
+      "domain": ".pinduoduo.com",
+      "path": "/",
+      "expires": 1791947554.920715,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_nano_fp",
+      "value": "XpmynqXJnqdynpXoX9_4rQB1l5QWZKX12H1iYyZg",
+      "domain": "mms.pinduoduo.com",
+      "path": "/",
+      "expires": 1791947555.202955,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "rckk",
+      "value": "yArzA1SUbTrWUUfSYLpSMgBrRS90Ei1y",
+      "domain": ".pinduoduo.com",
+      "path": "/",
+      "expires": 1788923574.376155,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_bee",
+      "value": "yArzA1SUbTrWUUfSYLpSMgBrRS90Ei1y",
+      "domain": ".pinduoduo.com",
+      "path": "/",
+      "expires": 1788923574.376241,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "ru1k",
+      "value": "1ecbbf82-de77-41a8-bcfe-125cfa48867a",
+      "domain": ".pinduoduo.com",
+      "path": "/",
+      "expires": 1788923574.376278,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_f77",
+      "value": "1ecbbf82-de77-41a8-bcfe-125cfa48867a",
+      "domain": ".pinduoduo.com",
+      "path": "/",
+      "expires": 1788923574.376313,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "ru2k",
+      "value": "c4ee0cd7-c082-40aa-a8a3-bdfec8b1577e",
+      "domain": ".pinduoduo.com",
+      "path": "/",
+      "expires": 1788923574.376348,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_a42",
+      "value": "c4ee0cd7-c082-40aa-a8a3-bdfec8b1577e",
+      "domain": ".pinduoduo.com",
+      "path": "/",
+      "expires": 1788923574.376381,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "PASS_ID",
+      "value": "1-/Yk0SG85b+B+9N+Y9Vof2ZURr4+4hZPceFLIUnWjyeBcCdn2ZQstn/JDFSGjYqY6a6clO+Xo2vGffFetfBFUOw_193835153_88583031",
+      "domain": "mms.pinduoduo.com",
+      "path": "/",
+      "expires": 1758251569.08373,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "JSESSIONID",
+      "value": "84273F850DBF0CE8E522740A11C419DD",
+      "domain": "mms.pinduoduo.com",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "windows_app_shop_token_23",
+      "value": "eyJ0IjoiZWpzQ2R2RWhWanNLRDJsellwQmh0alRuNk95dFlXY3Z2NTQvZUoyQTR2K3NFWEx1Qm4vSXA2WmFtK2JkZjUySSIsInYiOjEsInMiOjIzLCJtIjoxOTM4MzUxNTMsInUiOjg4NTgzMDMxfQ",
+      "domain": ".pinduoduo.com",
+      "path": "/",
+      "expires": 1757473969.180148,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "SUB_SYSTEM_ID",
+      "value": "7",
+      "domain": "yingxiao.pinduoduo.com",
+      "path": "/",
+      "expires": 1758251569.908088,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "SUB_PASS_ID",
+      "value": "eyJ0IjoiTEU5UkU4TzJqb21ZOW5NYzMxNzcwZ2dnZFR2ZGY1blBodjN2OFBPazUrZG11UjdaOUdaS0ROTFBJbGg2ZkgrdSIsInYiOjEsInMiOjcsIm0iOjE5MzgzNTE1MywidSI6ODg1ODMwMzF9",
+      "domain": "yingxiao.pinduoduo.com",
+      "path": "/",
+      "expires": 1758251569.908153,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "https://yingxiao.pinduoduo.com",
+      "localStorage": [
+        {
+          "name": "226_3_36_102_105_110_103_101_114_45_117_117_105_100_49_95_48_46_49_46_53",
+          "value": "226_3_72_49_101_99_98_98_102_56_50_45_100_101_55_55_45_52_49_97_56_45_98_99_102_101_45_49_50_53_99_102_97_52_56_56_54_55_97"
+        },
+        {
+          "name": "unique_d_uuid",
+          "value": "f77c6757-7e44-4bab-97f6-b4acca267fa9"
+        },
+        {
+          "name": "new_userinfoInvalid",
+          "value": "false"
+        },
+        {
+          "name": "_nano_fp",
+          "value": "XpmynqXJnqdyn0Tjl9_I2JV8hQxpqCzHHd8WyyVD"
+        },
+        {
+          "name": "226_3_36_102_105_110_103_101_114_45_117_117_105_100_50_95_48_46_49_46_53",
+          "value": "226_3_72_99_52_101_101_48_99_100_55_45_99_48_56_50_45_52_48_97_97_45_97_56_97_51_45_98_100_102_101_99_56_98_49_53_55_55_101"
+        },
+        {
+          "name": "226_3_34_102_105_110_103_101_114_45_70_75_71_74_95_48_46_49_46_53",
+          "value": "226_3_64_87_122_68_81_86_102_88_65_82_111_120_106_100_79_103_76_65_56_55_50_54_110_103_109_88_108_66_109_106_99_84_50"
+        },
+        {
+          "name": "226_3_32_102_105_110_103_101_114_45_107_101_121_95_48_46_49_46_53",
+          "value": "226_3_64_121_65_114_122_65_49_83_85_98_84_114_87_85_85_102_83_89_76_112_83_77_103_66_114_82_83_57_48_69_105_49_121"
+        },
+        {
+          "name": "new_userinfo",
+          "value": "{\"hasLogin\":true,\"id\":88583031,\"isAdUser\":false,\"mall\":{\"isOverSeaType\":false,\"logo\":\"https://img.pddpic.com/goods_mms/2022-04-21/da569460-fa27-4aea-a980-62e24793fb15_suffix.jpeg\",\"mallId\":193835153,\"mall_id\":193835153,\"mall_name\":\"云米电器官方旗舰店\"},\"mallId\":193835153,\"mallOwner\":true,\"mall_id\":193835153,\"userId\":88583031,\"username\":\"pdd19383515349\"}"
+        },
+        {
+          "name": "CHECKED_COLUMNS",
+          "value": "{\"9.0.5.\":[]}"
+        }
+      ]
+    },
+    {
+      "origin": "https://mms.pinduoduo.com",
+      "localStorage": [
+        {
+          "name": "old_username",
+          "value": "{\"username\":\"pdd19383515349\"}"
+        },
+        {
+          "name": "226_3_36_102_105_110_103_101_114_45_117_117_105_100_49_95_48_46_49_46_53",
+          "value": "226_3_72_49_101_99_98_98_102_56_50_45_100_101_55_55_45_52_49_97_56_45_98_99_102_101_45_49_50_53_99_102_97_52_56_56_54_55_97"
+        },
+        {
+          "name": "mms.pmm.did.2",
+          "value": "2c9b5df1-47b4-48f9-fbcf-273068ebf8a3"
+        },
+        {
+          "name": "MMS-LOGIN-FP",
+          "value": "yArzA1SUbTrWUUfSYLpSMgBrRS90Ei1y"
+        },
+        {
+          "name": "MALLSTATUS_",
+          "value": "4"
+        },
+        {
+          "name": "mms_login_abTestGroup",
+          "value": "false"
+        },
+        {
+          "name": "new_userinfoInvalid",
+          "value": "true"
+        },
+        {
+          "name": "_nano_fp",
+          "value": "XpmynqXJnqdynpXoX9_4rQB1l5QWZKX12H1iYyZg"
+        },
+        {
+          "name": "ISLOGIN",
+          "value": "1"
+        },
+        {
+          "name": "226_3_36_102_105_110_103_101_114_45_117_117_105_100_50_95_48_46_49_46_53",
+          "value": "226_3_72_99_52_101_101_48_99_100_55_45_99_48_56_50_45_52_48_97_97_45_97_56_97_51_45_98_100_102_101_99_56_98_49_53_55_55_101"
+        },
+        {
+          "name": "226_3_34_102_105_110_103_101_114_45_70_75_71_74_95_48_46_49_46_53",
+          "value": "226_3_64_87_122_68_81_86_102_88_65_82_111_120_106_100_79_103_76_65_56_55_50_54_110_103_109_88_108_66_109_106_99_84_50"
+        },
+        {
+          "name": "PROTOCOL_MODAL",
+          "value": "undefined"
+        },
+        {
+          "name": "226_3_32_102_105_110_103_101_114_45_107_101_121_95_48_46_49_46_53",
+          "value": "226_3_64_121_65_114_122_65_49_83_85_98_84_114_87_85_85_102_83_89_76_112_83_77_103_66_114_82_83_57_48_69_105_49_121"
+        },
+        {
+          "name": "new_userinfo",
+          "value": "{\"id\":88583031,\"username\":\"pdd19383515349\",\"mobile\":\"132****0449\",\"nickname\":\"\",\"mallOwner\":true,\"roleId\":1,\"isBindWeChat\":true,\"forceMobileVerify\":false,\"mallVerify\":true,\"mallInfoAuthority\":true,\"conjoinedUserId\":null,\"mall_id\":193835153,\"password_status\":1,\"server_time\":1757387568,\"created_at\":\"2020-12-01 14:28:35\",\"updated_at\":\"2025-09-04 16:35:25\",\"mall\":{\"mall_id\":193835153,\"mall_name\":\"云米电器官方旗舰店\",\"mall_desc\":\"作为全屋互联网家电开创者,云米成立于2014年,定位IoT @ Home。2018 年 9 月,成立短短4年的云米在美国纳斯达克成功上市(代码: VIOT)。云米率先发布5G IoT战略,通过5G+ AI+IoT 的方法进行跨界整合,引领新一轮家庭智能化变革。5G IoT家电 ,高速全屋互联。\",\"company_phone\":\"189****6816\",\"merchant_type\":3,\"mall_type\":4,\"source_type\":0,\"oversea_type\":0,\"is_open\":1,\"staple_id\":\"11,12,4\",\"logo\":\"https://img.pddpic.com/goods_mms/2022-04-21/da569460-fa27-4aea-a980-62e24793fb15_suffix.jpeg\",\"status\":2,\"staple\":[\"数码电器\",\"家纺家具家装\",\"家居生活\"],\"apply_close\":0}}"
+        },
+        {
+          "name": "SPRING",
+          "value": "undefined"
+        }
+      ]
+    }
+  ]
+}

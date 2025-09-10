@@ -1,2 +1,3 @@
-2025/09/08-17:06:11.968 6934 Creating DB C:\pdd-scraper\pdd-auth-profile\Default\shared_proto_db since it was missing.
-2025/09/08-17:06:12.077 6934 Reusing MANIFEST C:\pdd-scraper\pdd-auth-profile\Default\shared_proto_db/MANIFEST-000001
+2025/09/10-10:15:31.862 3d74 Reusing MANIFEST C:\Users\Administrator\my-playwright-project\download_playwright\PDD\pdd-auth-profile\Default\shared_proto_db/MANIFEST-000001
+2025/09/10-10:15:31.863 3d74 Recovering log #3
+2025/09/10-10:15:31.865 3d74 Reusing old log C:\Users\Administrator\my-playwright-project\download_playwright\PDD\pdd-auth-profile\Default\shared_proto_db/000003.log 

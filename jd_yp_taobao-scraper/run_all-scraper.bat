@@ -7,7 +7,7 @@ REM 切换代码页为UTF-8，解决Python打印时的编码错误和控制台�
 chcp 65001 > nul
 
 REM 设置脚本所在的目录路径
-set SCRIPT_DIR="C:\Users\Administrator\my-playwright-project\tests"
+set SCRIPT_DIR="C:\Users\Administrator\my-playwright-project\jd_yp_taobao-scraper"
 
 REM 设置Node和Python的路径
 set NODE_PATH=node
