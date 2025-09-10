@@ -1,4 +1,4 @@
-// download_reports.js
+// download_reports.js--我被这个日期搞蒙了，暂时通过这种修改，才能正确生成昨日的表格。
 
 const { chromium } = require('playwright');
 const fs = require('fs/promises');
@@ -9,13 +9,36 @@ const path = require('path');
 const userDataDir = path.join(process.cwd(), 'pdd-auth-profile');
 
 // 2. 报表下载的目标文件夹
-const DOWNLOAD_FOLDER = 'Z:\\天猫生意参謀\\推广_商品数据\\拼多多';
+const DOWNLOAD_FOLDER = 'Z:\\天猫生意参谋\\推广_商品数据\\拼多多';
 
 // 3. 目标网页的URL模板
 const targetUrlTemplate = 'https://yingxiao.pinduoduo.com/goods/report/promotion/overView?beginDate={DATE}&endDate={DATE}';
 
 // 4. (可选) 如果文件夹为空，从多少天前开始下载
 const DEFAULT_START_DAYS_AGO = 7;
+
+// ======================= [本次修改 1/4] =======================
+// 5. (新增) 行为模拟配置
+const DOWNLOADS_PER_BATCH = 15; // 每下载多少个文件后进行一次长暂停
+const SHORT_DELAY_MIN_MS = 3000; // 短暂延迟的最小毫秒数 (原为 2000)
+const SHORT_DELAY_MAX_MS = 7000; // 短暂延迟的最大毫秒数
+const LONG_DELAY_MIN_MS = 35000; // 长暂停的最小毫秒数
+const LONG_DELAY_MAX_MS = 65000; // 长暂停的最大毫秒数
+// ==========================================================
+
+
+/**
+ * ======================= [本次修改 2/4] =======================
+ * (新增) 生成一个在指定范围内的随机延迟时间
+ * @param {number} min - 最小毫秒数
+ * @param {number} max - 最大毫秒数
+ * @returns {Promise<void>}
+ */
+function randomDelay(min, max) {
+    const delay = Math.floor(Math.random() * (max - min + 1)) + min;
+    console.log(` -> 随机等待 ${delay / 1000} 秒...`);
+    return new Promise(resolve => setTimeout(resolve, delay));
+}
 // ==========================================================
 
 
@@ -31,18 +54,21 @@ async function getDatesToDownload(directory) {
         const files = await fs.readdir(directory);
 
         let latestDate = null;
-        // ========================= [本次修改位置 1/2] =========================
+        // ========================= [原有修改位置 1/2] =========================
         // 更新正则表达式以匹配 YYYYMMDD 格式的日期
-        const dateRegex = /(\d{4})(\d{2})(\d{2})/;
+        const dateRegex = /(\d{4})-(\d{2})-(\d{2})/;
         // ====================================================================
 
         files.forEach(file => {
             const match = file.match(dateRegex);
             if (match) {
-                // ========================= [本次修改位置 2/2] =========================
+                // ========================= [原有修改位置 2/2] =========================
                 // 从匹配结果构建 YYYY-MM-DD 格式的日期字符串
                 const dateString = `${match[1]}-${match[2]}-${match[3]}`; // 例如: '2025-09-07'
-                const fileDate = new Date(dateString);
+                // [正确代码]
+                const parts = dateString.split('-'); // 例如, '2025-09-07' -> ['2025', '09', '07']
+                // 使用数组元素创建日期，并确保月份-1 (因为JS月份从0开始)
+                const fileDate = new Date(parts[0], parts[1] - 1, parts[2]); 
                 // ====================================================================
 
                 if (!latestDate || fileDate > latestDate) {
@@ -56,13 +82,14 @@ async function getDatesToDownload(directory) {
 
         // 根据当前时间 (Monday, September 8, 2025) 计算昨天
         const yesterday = new Date(today);
-        yesterday.setDate(today.getDate() - 1); // 昨天是 2025-09-07
+        yesterday.setDate(today.getDate() ); // 昨天是 2025-09-07
 
         let startDate = new Date();
         if (latestDate) {
             console.log(`本地找到的最新报表日期是: ${latestDate.toISOString().split('T')[0]}`);
-            startDate.setTime(latestDate.getTime());
-            startDate.setDate(latestDate.getDate() + 1);
+            // [更稳健的新代码]
+            startDate = new Date(latestDate); // 1. 先创建一个 latestDate 的精确副本
+            startDate.setDate(startDate.getDate() ); // 2. 然后让这个副本自己增加一天
         } else {
             console.log('本地文件夹为空或未找到有效报表，将从默认天数前开始下载...');
             startDate.setDate(today.getDate() - DEFAULT_START_DAYS_AGO);
@@ -107,12 +134,18 @@ async function main() {
 
     const context = await chromium.launchPersistentContext(userDataDir, {
         headless: false,
-        args: ['--start-maximized'],
+        args: ['--start-maximized', '--disable-blink-features=AutomationControlled'],
         viewport: null,
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
     });
 
     const page = context.pages().length ? context.pages()[0] : await context.newPage();
     console.log('✅ 用户配置加载成功！开始执行下载任务...');
+
+    // ======================= [本次修改 3/4] =======================
+    // (新增) 下载计数器，用于触发长暂停
+    let downloadCounter = 0;
+    // ==========================================================
 
     for (const dateStr of datesToDownload) {
         try {
@@ -124,7 +157,7 @@ async function main() {
 
             console.log(' -> 页面加载完成，正在查找下载按钮...');
 
-            const downloadButton = page.getByRole('button', { name: '下载' });
+            const downloadButton = page.getByRole('button', { name: '下载' }).nth(1);
             await downloadButton.waitFor({ state: 'visible', timeout: 30000 });
 
             console.log(' -> 找到按钮，准备点击并捕获下载...');
@@ -140,7 +173,19 @@ async function main() {
             await download.saveAs(filePath);
             console.log(`✅ [成功] 报表已保存到: ${filePath}`);
 
-            await page.waitForTimeout(2000);
+            // ======================= [本次修改 4/4] =======================
+            downloadCounter++; // 计数器加 1
+
+            // 检查是否达到了批次下载的数量
+            if (downloadCounter % DOWNLOADS_PER_BATCH === 0) {
+                console.log(`\n--- 已连续下载 ${DOWNLOADS_PER_BATCH} 个文件，执行一次长暂停以模拟人类行为 ---`);
+                await randomDelay(LONG_DELAY_MIN_MS, LONG_DELAY_MAX_MS);
+                console.log('--- 长暂停结束，继续任务 ---\n');
+            } else {
+                // 将固定的 2 秒等待改为随机的短延迟
+                await randomDelay(SHORT_DELAY_MIN_MS, SHORT_DELAY_MAX_MS);
+            }
+            // ==========================================================
 
         } catch (error) {
             console.error(`❌ [失败] 处理日期 ${dateStr} 时遇到错误: ${error.message}`);
