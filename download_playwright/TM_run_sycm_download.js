@@ -12,7 +12,7 @@ const path = require('path');
         // --- 1. 启动浏览器并加载登录状态 ---
         console.log('正在静默启动浏览器...');
         browser = await chromium.launch({ 
-            headless: false // true 为静默运行, false 会显示浏览器窗口
+            headless: true // true 为静默运行, false 会显示浏览器窗口
         });
         
         // 从 auth.json 文件加载登录状态
