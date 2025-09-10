@@ -147,7 +147,7 @@ async function downloadReportForDate(page, date) {
     let page;
     try {
         // --- 新增：首先确定需要下载的任务队列 ---
-        const downloadsDir = "C:\\Users\\Administrator\\Downloads\\待转化";
+        const downloadsDir = "z:\\天猫生意参谋\\商品_商品排行";
         const latestDateInFiles = getLatestDateFromFiles(downloadsDir);
         const datesToDownload = generateDateQueue(latestDateInFiles);
 
