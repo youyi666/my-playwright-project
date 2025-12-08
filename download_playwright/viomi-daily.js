@@ -1,340 +1,317 @@
-// viomi-download-script-daily.js
-
 import { chromium } from 'playwright';
 import nodemailer from 'nodemailer';
 import fs from 'fs';
 import path from 'path';
+import axios from 'axios';
 
-// --- 配置信息 ---
+// ================== 1. 配置区域 ==================
 const VIOMI_USERNAME = process.env.VIOMI_USERNAME;
 const VIOMI_PASSWORD = process.env.VIOMI_PASSWORD;
+const DEEPSEEK_API_KEY = "sk-518c2cffc9bf4fab860573856aea8537"; // ⚠️ 替换你的 Key
 
-// 邮件配置
+const TARGET_CHANNELS = ['拼多多', '京东', '天猫', '抖音'];
+const OBSIDIAN_VAULT_PATH = 'D:\\D_obsidian\\obsidian\\拼多多-净水项目\\工作日报';
+const HISTORY_FILE = 'viomi_history.json'; 
+
 const EMAIL_CONFIG = {
     smtp_server: "smtp.exmail.qq.com",
     smtp_port: 465,
     sender_email: "luojunsheng@viomi.com",
     sender_password: "HCXRGMx63n7hRt9W", 
-    recipients: [
-        "luojunsheng@viomi.com"
-    ]
+    recipients: ["luojunsheng@viomi.com"]
 };
 
-// --- URL 配置 ---
 const SHIPMENT_URL = 'https://sky.viomi.com.cn/bi/dashboard/module?projectId=1&sourceId=3377&menuId=1475';
 const GSV_URL = 'https://sky.viomi.com.cn/bi/dashboard/module?projectId=1&sourceId=3377&menuId=1506';
 
-// --- Obsidian 配置 ---
-// 路径使用了双反斜杠 \\ 来转义
-const OBSIDIAN_VAULT_PATH = 'D:\\D_obsidian\\obsidian\\拼多多-净水项目\\工作日报';
-// [新增] 历史数据存储文件 (自动生成在同一目录下)
-const HISTORY_FILE = 'viomi_history.json';
+// ================== 2. 辅助工具 ==================
 
-// 辅助函数：解析数字 (移除万字和逗号)
 function parseNumber(str) {
-    if (typeof str !== 'string') return 0;
-    const cleanStr = str.replace(/,/g, '').replace(/%/g, '');
+    if (!str || typeof str !== 'string') return 0;
+    const cleanStr = str.replace(/,/g, '').replace(/%/g, '').replace(/万/g, '');
     const match = cleanStr.match(/([\d\.\-]+)/);
-    if (!match) return 0;
-    let num = parseFloat(match[1]);
-    // 如果包含“万”，统一转为数字便于计算 (脚本内部逻辑统一用“万”为单位的数值)
-    return num;
+    return match ? parseFloat(match[1]) : 0;
 }
 
-// 辅助函数：格式化数字为“万”字符串
-function formatToWan(num) {
-    return num.toFixed(1) + '万';
-}
+function formatToWan(num) { return num.toFixed(1) + '万'; }
 
-// 辅助函数：Markdown 转 HTML
+// 邮件HTML渲染 (保持美观)
 function markdownToHtml(text) {
     if (typeof text !== 'string') return '';
-    return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-               .replace(/\n/g, '<br/>');
+    let html = text
+        .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #d9534f;">$1</strong>')
+        .replace(/^> (.*$)/gim, '<div style="border-left: 4px solid #10b981; padding: 8px 12px; margin: 6px 0; background-color: #f0fdf4; color: #374151;">$1</div>')
+        .replace(/^- (.*$)/gim, '<li style="margin-left: 20px;">$1</li>')
+        .replace(/\n/g, '<br/>');
+    return `<div style="font-family: '微软雅黑', sans-serif; line-height: 1.6; color: #333;">${html}</div>`;
 }
 
-/**
- * [核心新增] 管理历史数据
- * 读取 json -> 写入今天的数据 -> 保存 -> 返回本月所有数据数组
- */
-function updateAndGetHistory(dateStr, shipmentVal, gsvVal) {
-    const filePath = path.join(OBSIDIAN_VAULT_PATH, HISTORY_FILE);
-    let history = { shipment: {}, gsv: {} };
+// ================== 3. 核心功能 ==================
 
-    // 1. 读取现有历史
-    if (fs.existsSync(filePath)) {
-        try {
-            history = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        } catch (e) {
-            console.error('读取历史文件失败，将重新创建:', e.message);
-        }
-    }
-
-    // 2. 写入/更新“昨日”的数据 (注意：key是日期)
-    // 脚本运行是“今天”，抓的是“昨日”的数据，但我们按“数据产生的日期”来存比较好管理吗？
-    // 为了简单，我们直接用 key = dateStr (运行脚本的当天日期，代表记录下“前一天”的数据)
-    // 或者更严谨一点，算一下昨天的日期。
-    // 这里我们直接用传入的 dateStr (脚本运行日期) 作为 Key，代表“在这一天记录到的昨日数据”。
-    history.shipment[dateStr] = shipmentVal;
-    history.gsv[dateStr] = gsvVal;
-
-    // 3. 保存
+async function scrapeFilteredTable(page, type) {
+    console.log(`🔍 [${type}] 正在扫描数据...`);
+    const filteredRows = [];
     try {
-        if (!fs.existsSync(OBSIDIAN_VAULT_PATH)){
-            fs.mkdirSync(OBSIDIAN_VAULT_PATH, { recursive: true });
+        let tableScope;
+        if (type === 'gsv') {
+            try {
+                tableScope = page.locator('div[class*="gridItem"]', { has: page.locator('h4', { hasText: '净水事业GSV日报NEW' }) });
+                await tableScope.locator('tr.ant-table-row').first().waitFor({ timeout: 10000 });
+            } catch(e) { tableScope = page; }
+        } else {
+            tableScope = page;
+            await page.waitForSelector('tr.ant-table-row', { timeout: 15000 });
         }
-        fs.writeFileSync(filePath, JSON.stringify(history, null, 2));
-    } catch (e) {
-        console.error('写入历史文件失败:', e.message);
-    }
 
-    return history;
+        const rows = await tableScope.locator('tr.ant-table-row').all();
+        for (const row of rows) {
+            const cells = await row.locator('td').allTextContents();
+            if (cells.length < 5) continue; 
+            
+            let rowData = {};
+            let channelNameRaw = "";
+
+            if (type === 'shipment') {
+                channelNameRaw = cells[1]?.trim() || cells[0]?.trim();
+                let targetIdx = (isNaN(parseNumber(cells[2])) && !isNaN(parseNumber(cells[3]))) ? 3 : 2;
+                rowData = {
+                    channel: channelNameRaw,
+                    target: parseNumber(cells[targetIdx]),
+                    yesterday: parseNumber(cells[targetIdx + 1]),
+                    cumulative: parseNumber(cells[targetIdx + 2]),
+                    rate: parseNumber(cells[targetIdx + 5]) 
+                };
+                if (rowData.rate === 0 && parseNumber(cells[7]) > 0) rowData.rate = parseNumber(cells[7]);
+            } else if (type === 'gsv') {
+                channelNameRaw = cells[1]?.trim();
+                rowData = {
+                    channel: channelNameRaw,
+                    target: parseNumber(cells[3]), 
+                    rate: parseNumber(cells[4]),   
+                    cumulative: parseNumber(cells[5]), 
+                    daily: parseNumber(cells[8]),      
+                    traffic: parseNumber(cells[11]),   
+                    conversion: parseNumber(cells[13]) 
+                };
+            }
+            const matchedKey = TARGET_CHANNELS.find(key => channelNameRaw && channelNameRaw.includes(key));
+            if (matchedKey && rowData.target > 0) {
+                rowData.channel = matchedKey;
+                filteredRows.push(rowData);
+            }
+        }
+    } catch (e) { console.error(`⚠️ [${type}] 抓取异常:`, e.message); }
+    return Array.from(new Map(filteredRows.map(item => [item.channel, item])).values());
 }
 
-/**
- * [核心新增] 智能预测逻辑 (去除最高峰)
- */
-function calculateSmartPrediction(currentCumulative, historyMap, daysPassed, daysRemaining, currentMonthPrefix) {
-    // 1. 提取本月已记录的所有单日数据
-    let dailyValues = [];
-    for (let dateKey in historyMap) {
-        if (dateKey.startsWith(currentMonthPrefix)) {
-            dailyValues.push(historyMap[dateKey]);
-        }
-    }
+async function generateCoachComment(myChannel, allData, historyData) {
+    console.log("🧠 正在召唤 AI 教练...");
+    if (!DEEPSEEK_API_KEY || DEEPSEEK_API_KEY.includes("xxxx")) return "> [!warning] 缺少 AI Key";
 
-    // 2. 计算日均 (Run Rate)
-    let runRate = 0;
-    let logicDescription = "";
+    const today = new Date();
+    const dayOfMonth = today.getDate();
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const timeProgress = ((dayOfMonth / daysInMonth) * 100).toFixed(1);
 
-    // 情况A: 数据太少 (少于3天)，没法去除最高峰，直接用累计/天数
-    if (dailyValues.length < 3) {
-        // 如果历史记录也没数据，就用当前的 total / days
-        runRate = daysPassed > 0 ? (currentCumulative / daysPassed) : 0;
-        logicDescription = "数据积累少于3天，采用简单平均";
-    } 
-    // 情况B: 数据充足，去除最高峰
-    else {
-        let maxVal = Math.max(...dailyValues);
-        let sumVal = dailyValues.reduce((a, b) => a + b, 0);
-        
-        // 去除最高值后的总和 / (天数 - 1)
-        let adjustedSum = sumVal - maxVal;
-        let adjustedCount = dailyValues.length - 1;
-        
-        runRate = adjustedSum / adjustedCount;
-        logicDescription = `基于${dailyValues.length}天数据，剔除峰值(${maxVal}万)`;
-    }
-
-    // 3. 预测月末 = 当前累计(已落袋) + (日均 x 剩余天数)
-    let predictedTotal = currentCumulative + (runRate * daysRemaining);
-    
-    return {
-        total: predictedTotal,
-        rate: runRate,
-        desc: logicDescription
-    };
-}
-
-/**
- * 发送邮件
- */
-async function sendEmail(subject, text, html) {
-    console.log('📧 准备发送邮件...');
-    let transporter = nodemailer.createTransport({
-        host: EMAIL_CONFIG.smtp_server,
-        port: EMAIL_CONFIG.smtp_port,
-        secure: true, 
-        auth: {
-            user: EMAIL_CONFIG.sender_email,
-            pass: EMAIL_CONFIG.sender_password,
-        },
-        tls: { rejectUnauthorized: false }
+    // 事实核查
+    let maxConvRate = 0, maxConvChannel = "";
+    TARGET_CHANNELS.forEach(c => {
+        const d = allData.gsv.find(i => i.channel === c);
+        if (d && d.conversion > maxConvRate) { maxConvRate = d.conversion; maxConvChannel = c; }
     });
 
+    // 随机风格
+    const styles = ["【犀利毒舌型】", "【热血教练型】", "【数据考据型】", "【老谋深算型】", "【风控预警型】"];
+    const currentStyle = styles[Math.floor(Math.random() * styles.length)];
+
+    let battleFieldInfo = `【四国杀数据 (时间进度:${timeProgress}%)】:`;
+    const sortedChannels = TARGET_CHANNELS.map(c => {
+        const g = allData.gsv.find(i => i.channel === c) || { rate: 0 };
+        return { name: c, rate: g.rate };
+    }).sort((a,b) => b.rate - a.rate);
+
+    sortedChannels.forEach(item => {
+        const c = item.name;
+        const g = allData.gsv.find(i => i.channel === c) || {};
+        const mark = c === myChannel ? "(我)" : "";
+        battleFieldInfo += `\n- ${c}${mark}: 月目标达成${g.rate}% (转化率${g.conversion}%)`;
+    });
+
+    const systemPrompt = `
+    你是一位电商运营总监。针对“${myChannel}”写日报点评。
+    🔥 **今日人设**：${currentStyle}
+    📅 **时间进度**：${timeProgress}%。
+    
+    【事实核查】：全场转化率最高的是${maxConvChannel}(${maxConvRate}%)。如果我不如今，必须批评。
+    数据里的百分比是“月度业绩目标达成率”，不是份额。
+    👉 **语言规范**：在提到“${myChannel}”的数据时，必须统一用“我们”来指代，严禁使用“我司”、“本司”这种生疏的称呼。
+    
+    请写一段**极简日报点评** (150字内，3点结构)：
+    🌟 **亮点**：(基于数据表扬)
+    ⚔️ **差距**：(指出和竞品或进度的差距)
+    ⚡ **指令**：(具体动作)
+    `;
+
     try {
-        let info = await transporter.sendMail({
-            from: `"${EMAIL_CONFIG.sender_email}" <${EMAIL_CONFIG.sender_email}>`,
-            to: EMAIL_CONFIG.recipients.join(','),
-            subject: subject, 
-            text: text, 
-            html: html 
-        });
-        console.log("✅ 邮件发送成功: %s", info.messageId);
-    } catch (error) {
-        console.error("❌ 邮件发送失败:", error);
-    }
+        const response = await axios.post('https://api.deepseek.com/chat/completions', {
+            model: "deepseek-chat",
+            messages: [{ role: "system", content: systemPrompt }, { role: "user", content: battleFieldInfo }],
+            temperature: 1.1
+        }, { headers: { 'Authorization': `Bearer ${DEEPSEEK_API_KEY}`, 'Content-Type': 'application/json' } });
+        return response.data.choices[0].message.content;
+    } catch (error) { return "> [!error] AI Coach 正在开会"; }
 }
 
-/**
- * 主程序
- */
+// ================== 4. 主程序 ==================
+
 async function runScript() {
-    if (!VIOMI_USERNAME || !VIOMI_PASSWORD) {
-        console.error('❌ 错误：请设置 VIOMI_USERNAME 和 VIOMI_PASSWORD 环境变量。');
-        return;
-    }
+    if (!VIOMI_USERNAME || !VIOMI_PASSWORD) { console.error('❌ 环境变量缺失'); return; }
 
     const browser = await chromium.launch({ headless: true }); 
     const page = await browser.newPage();
-    
-    let shipmentData = {};
-    let gsvData = {};
-    let todayDate = new Date();
+    let allShipmentData = [], allGSVData = [];
+    const myChannel = "拼多多";
+    const todayDate = new Date();
 
     try {
-        // 1. 登录
-        console.log(`🚀 开始导航到出货看板: ${SHIPMENT_URL}`);
+        // --- 1. 登录 ---
+        console.log(`🚀 启动任务...`);
         await page.goto(SHIPMENT_URL, { waitUntil: 'domcontentloaded' });
-        
-        console.log('🔑 正在登录...');
         try {
-            await page.getByRole('textbox', { name: '用户名' }).fill(VIOMI_USERNAME);
-            await page.getByRole('textbox', { name: '密码' }).fill(VIOMI_PASSWORD);
-            await page.getByRole('button', { name: '登 录' }).click();
+            await page.waitForSelector('input[type="text"], input[placeholder*="用户"]', { timeout: 5000 });
+            await page.fill('input[type="text"], input[placeholder*="用户"]', VIOMI_USERNAME);
+            await page.fill('input[type="password"]', VIOMI_PASSWORD);
+            await page.click('button, input[type="submit"], span:has-text("登 录")');
             await page.waitForLoadState('networkidle');
-        } catch (e) {
-            console.log('⚠️ 登录步骤跳过 (可能已登录):', e.message);
-        }
+        } catch (e) { console.log('⚠️ 跳过自动登录'); }
 
-        // 2. 抓取出货
-        console.log('📦 [1/2] 正在抓取出货数据...');
-        if (page.url() !== SHIPMENT_URL) await page.goto(SHIPMENT_URL, { waitUntil: 'networkidle' });
+        // --- 2. 抓取数据 ---
+        console.log('💰 抓取零售...');
+        if (page.url() !== GSV_URL) await page.goto(GSV_URL, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(5000); 
+        allGSVData = await scrapeFilteredTable(page, 'gsv');
 
-        const shipmentRowSelector = 'tr[data-row-key*="线上_吴云云_拼多多"]';
-        try {
-            await page.locator(shipmentRowSelector).waitFor({ state: 'visible', timeout: 60000 });
-            const vals = await page.locator(shipmentRowSelector).locator('td.ant-table-cell').allTextContents();
-            shipmentData = {
-                target: vals[2].trim(),       // 全月任务
-                yesterday: vals[3].trim(),    // 昨日完成
-                cumulative: vals[4].trim(),   // 累计完成
-                rate: vals[7].trim()          // 完成率
-            };
-        } catch (e) {
-            shipmentData = { target: '0', yesterday: '0', cumulative: '0', rate: '0%' };
-            console.error('⚠️ 出货抓取失败');
-        }
+        console.log('📦 抓取出货...');
+        await page.goto(SHIPMENT_URL, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(5000); 
+        allShipmentData = await scrapeFilteredTable(page, 'shipment');
 
-        // 3. 抓取零售(GSV)
-        console.log('💰 [2/2] 正在跳转至 GSV 零售看板...');
-        await page.goto(GSV_URL, { waitUntil: 'networkidle' });
-        try {
-            const gsvRow = page.locator('tr').filter({ hasText: '拼多多' }).first();
-            await gsvRow.waitFor({ state: 'visible', timeout: 60000 });
-            const vals = await gsvRow.locator('td').allTextContents();
-            gsvData = {
-                monthTarget: vals[3].trim(), 
-                monthRate: vals[4].trim(),       
-                monthAchieved: vals[5].trim(), 
-                dailyRetail: vals[8].trim()    
-            };
-        } catch (e) {
-            gsvData = { monthTarget: '0', monthRate: '0%', monthAchieved: '0', dailyRetail: '0' };
-            console.error('⚠️ GSV 抓取失败');
-        }
+        // --- 3. 历史与AI ---
+        let history = {};
+        const historyPath = path.join(OBSIDIAN_VAULT_PATH, HISTORY_FILE);
+        if (fs.existsSync(historyPath)) try { history = JSON.parse(fs.readFileSync(historyPath, 'utf8')); } catch(e){}
 
-    } catch (error) {
-        console.error('❌ 运行错误:', error);
-    } finally {
-        await browser.close();
-        console.log('🔒 浏览器已关闭');
+        const aiComment = await generateCoachComment(myChannel, { shipment: allShipmentData, gsv: allGSVData }, history);
 
-        // =================================================================
-        // 第四步：智能预测与生成
-        // =================================================================
+        const myGSV = allGSVData.find(d => d.channel === myChannel) || {};
+        history[myChannel] = { date: todayDate.toLocaleDateString(), gsv_rate: myGSV.rate };
+        if (!fs.existsSync(OBSIDIAN_VAULT_PATH)) fs.mkdirSync(OBSIDIAN_VAULT_PATH, { recursive: true });
+        fs.writeFileSync(historyPath, JSON.stringify(history, null, 2));
+
+        // --- 4. 组装报表数据 ---
+        const myShipData = allShipmentData.find(d => d.channel === myChannel) || { target: 0, yesterday: 0, cumulative: 0, rate: 0 };
         
-        // 1. 准备数据
-        const daysInMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0).getDate(); 
-        const daysPassed = todayDate.getDate() - 1; 
+        const daysPassed = todayDate.getDate() || 1;
+        const daysInMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0).getDate();
         const daysRemaining = daysInMonth - daysPassed;
-        const currentMonthPrefix = `${todayDate.getFullYear()}-${(todayDate.getMonth()+1).toString().padStart(2, '0')}`;
-        const todayDateStr = `${currentMonthPrefix}-${todayDate.getDate().toString().padStart(2, '0')}`;
-
-        // 2. 更新历史库 (Key: 今天日期, Value: 昨天的数值)
-        const shipmentVal = parseNumber(shipmentData.yesterday);
-        const gsvVal = parseNumber(gsvData.dailyRetail);
-        const history = updateAndGetHistory(todayDateStr, shipmentVal, gsvVal);
-
-        // 3. 计算智能预测
-        // 出货预测
-        const shipCum = parseNumber(shipmentData.cumulative);
-        const shipPred = calculateSmartPrediction(shipCum, history.shipment, daysPassed, daysRemaining, currentMonthPrefix);
         
-        // 零售预测
-        const gsvCum = parseNumber(gsvData.monthAchieved);
-        const gsvPred = calculateSmartPrediction(gsvCum, history.gsv, daysPassed, daysRemaining, currentMonthPrefix);
+        // 核心预测逻辑
+        const gsvDailyAvg = myGSV.cumulative / daysPassed; // 零售日均
+        const gsvPredTotal = myGSV.cumulative + (gsvDailyAvg * daysRemaining); // 预计全月
+        const gsvPredRate = (gsvPredTotal / myGSV.target * 100).toFixed(0);
 
-        // 4. 构建文案
-        const summaryText = `
-**📊 出货 (Shipment)**
-- 目标: ${shipmentData.target} | 进度: ${shipmentData.rate}
-- 昨日: ${shipmentData.yesterday}
-- 🔮 **本月预测**: ${formatToWan(shipPred.total)} (达成率 ${(shipPred.total/parseNumber(shipmentData.target)*100).toFixed(0)}%)
-- *预测逻辑: ${shipPred.desc}*
+        const shipDailyAvg = myShipData.cumulative / daysPassed; // 出货日均
+        const shipPredTotal = myShipData.cumulative + (shipDailyAvg * daysRemaining);
+        const shipPredRate = (shipPredTotal / myShipData.target * 100).toFixed(0);
 
-**💰 零售 (GSV)**
-- 目标: ${gsvData.monthTarget}万 | 达成: ${gsvData.monthRate}
-- 昨日: ${gsvData.dailyRetail}万
-- 🔮 **本月预测**: ${formatToWan(gsvPred.total)} (达成率 ${(gsvPred.total/parseNumber(gsvData.monthTarget)*100).toFixed(0)}%)
+        // --- 5. 生成你想要的叙事型邮件文案 ---
+        const emailBody = `
+### 📊 核心数据复盘
+
+**【零售 (GSV)】**
+本月目标 **${myGSV.target}万**，当前进度 **${myGSV.rate}%**（已完成 ${myGSV.cumulative}万）。
+昨日零售 **${myGSV.daily}万**。
+按此趋势（日均 ${gsvDailyAvg.toFixed(2)}万），预计全月总达成 **${gsvPredTotal.toFixed(1)}万**（达成率 ${gsvPredRate}%）。
+
+**【出货 (Shipment)】**
+本月目标 **${myShipData.target}万**，当前进度 **${myShipData.rate}%**（已完成 ${myShipData.cumulative}万）。
+昨日出货 **${myShipData.yesterday}万**。
+按此趋势（日均 ${shipDailyAvg.toFixed(2)}万），预计全月总达成 **${shipPredTotal.toFixed(1)}万**（达成率 ${shipPredRate}%）。
+
+---
+### 🏆 AI点评
+${aiComment}
         `.trim();
 
-        const mailSubject = `[日报] 拼多多业绩: 出货${shipmentData.yesterday} / 零售${gsvData.dailyRetail} (${todayDate.toLocaleDateString()})`;
+        await sendEmailWithRetry(`[日报] 拼多多业绩复盘 (${todayDate.toLocaleDateString()})`, emailBody, markdownToHtml(emailBody));
 
-        // 5. 发送邮件
-        await sendEmail(mailSubject, summaryText, markdownToHtml(summaryText));
-
-        // 6. 写入 Obsidian
-        console.log('\n📝 正在写入 Obsidian...');
+        // --- 6. 生成 Obsidian (保持 YAML 格式) ---
         const dateFileName = `${todayDate.getFullYear()}-${(todayDate.getMonth()+1).toString().padStart(2, '0')}-${todayDate.getDate().toString().padStart(2, '0')}.md`;
         const fullPath = path.join(OBSIDIAN_VAULT_PATH, dateFileName);
+        const fullDateStr = `${todayDate.getFullYear()}/${todayDate.getMonth()+1}/${todayDate.getDate()} ${todayDate.toLocaleTimeString()}`;
+
+        let comparisonTableMd = `| 渠道 | 零售达成 | 转化率 | 出货达成 | 昨日零售 |\n| :--- | :--- | :--- | :--- | :--- |\n`;
+        TARGET_CHANNELS.forEach(c => {
+            const g = allGSVData.find(x => x.channel === c) || {rate:0, conversion:0, daily:0};
+            const s = allShipmentData.find(x => x.channel === c) || {rate:0};
+            const style = c === myChannel ? '**' : '';
+            comparisonTableMd += `| ${style}${c}${style} | ${g.rate}% | ${g.conversion}% | ${s.rate}% | ${g.daily}万 |\n`;
+        });
 
         const markdownContent = `---
-CreateTime: ${new Date().toLocaleString()}
+CreateTime: ${fullDateStr}
 Type: 自动日报
 Tags: #电商/拼多多 #自动报表
-Target_Shipment: ${shipmentData.target}
-Progress_Shipment: ${shipmentData.rate}
-Cumulative_Shipment: ${shipmentData.cumulative}
-Yesterday_Shipment: ${shipmentData.yesterday}
-Target_GSV: ${gsvData.monthTarget}
-Progress_GSV: ${gsvData.monthRate}
-Cumulative_GSV: ${gsvData.monthAchieved}
-Yesterday_GSV: ${gsvData.dailyRetail}
+Target_Shipment: ${formatToWan(myShipData.target)}
+Progress_Shipment: ${myShipData.rate}%
+Cumulative_Shipment: ${formatToWan(myShipData.cumulative)}
+Yesterday_Shipment: ${formatToWan(myShipData.yesterday)}
+Target_GSV: ${myGSV.target}
+Progress_GSV: ${myGSV.rate}%
+Cumulative_GSV: ${myGSV.cumulative}
+Yesterday_GSV: ${myGSV.daily}
 ---
 
 # 📅 ${todayDate.toLocaleDateString()} 拼多多运营日报
 
 ## 🔮 智能预测 (本月达成)
-> ${shipPred.desc}，去除高峰干扰。
+> 基于${daysPassed}天数据，线性推演。
 
 | 维度 | 月度目标 | 当前累计 | **预测全月** | **预测达成率** |
 | :--- | :--- | :--- | :--- | :--- |
-| **出货** | ${shipmentData.target} | ${shipmentData.cumulative} | **${formatToWan(shipPred.total)}** | **${(shipPred.total/parseNumber(shipmentData.target)*100).toFixed(0)}%** |
-| **零售** | ${gsvData.monthTarget} | ${gsvData.monthAchieved} | **${formatToWan(gsvPred.total)}** | **${(gsvPred.total/parseNumber(gsvData.monthTarget)*100).toFixed(0)}%** |
+| **出货** | ${formatToWan(myShipData.target)} | ${formatToWan(myShipData.cumulative)} | **${formatToWan(shipPredTotal)}** | **${shipPredRate}%** |
+| **零售** | ${myGSV.target} | ${myGSV.cumulative} | **${formatToWan(gsvPredTotal)}** | **${gsvPredRate}%** |
 
 ## 📦 基础数据详情
-- **出货**: 昨日 ${shipmentData.yesterday}，本月累计 ${shipmentData.cumulative}
-- **零售**: 昨日 ${gsvData.dailyRetail}，本月累计 ${gsvData.monthAchieved}
+- **出货**: 昨日 ${formatToWan(myShipData.yesterday)}，本月累计 ${formatToWan(myShipData.cumulative)}，按此趋势（日均 ${shipDailyAvg.toFixed(2)}万），预计全月总达成 **${shipPredTotal.toFixed(1)}万**（达成率 ${shipPredRate}%）
+- **零售**: 昨日 ${myGSV.daily}，本月累计 ${myGSV.cumulative}万，按此趋势（日均 ${gsvDailyAvg.toFixed(2)}万），预计全月总达成 **${gsvPredTotal.toFixed(1)}万**（达成率 ${gsvPredRate}%）。
 
-## 📝 每日复盘
-### 1. 预测偏差分析
-- [ ] 今天的预测值 (${formatToWan(shipPred.total)}) 是否符合预期？
-- [ ] 如果去除高峰后的日均 (${formatToWan(shipPred.rate)}) 偏低，是否需要增加推广？
+## ⚔️ 关键竞争 (Big 4)
+${comparisonTableMd}
 
-### 2. 今日重点
-- [ ] 
+## 🏆 AI指导
+${aiComment}
+
+## 📝 我的思考 (Reflection)
+- [ ] **针对差异**: 
+- [ ] **关键动作**: 
 `;
+        fs.writeFileSync(fullPath, markdownContent);
+        console.log(`✅ Obsidian 笔记已生成: ${fullPath}`);
 
-        try {
-            if (!fs.existsSync(OBSIDIAN_VAULT_PATH)){
-                fs.mkdirSync(OBSIDIAN_VAULT_PATH, { recursive: true });
-            }
-            fs.writeFileSync(fullPath, markdownContent);
-            console.log(`✅ [Obsidian] 笔记已写入: ${fullPath}`);
-        } catch (err) {
-            console.error('❌ [Obsidian] 写入失败:', err.message);
-        }
+    } catch (error) { console.error('❌ 运行错误:', error); } 
+    finally { await browser.close(); }
+}
+
+async function sendEmailWithRetry(subject, text, html, retries = 3) {
+    let transporter = nodemailer.createTransport({
+        host: EMAIL_CONFIG.smtp_server, port: EMAIL_CONFIG.smtp_port, secure: true,
+        auth: { user: EMAIL_CONFIG.sender_email, pass: EMAIL_CONFIG.sender_password },
+        tls: { rejectUnauthorized: false }
+    });
+    for (let i = 0; i < retries; i++) {
+        try { await transporter.sendMail({ from: EMAIL_CONFIG.sender_email, to: EMAIL_CONFIG.recipients, subject, text, html }); return; }
+        catch (e) { await new Promise(res => setTimeout(res, 2000)); }
     }
 }
 
