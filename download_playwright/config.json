@@ -1,0 +1,20 @@
+{
+    "viomi": {
+        "username": "YOUR_VIOMI_USERNAME",
+        "password": "YOUR_VIOMI_PASSWORD"
+    },
+    "email": {
+        "smtp_server": "smtp.exmail.qq.com",
+        "smtp_port": 465,
+        "sender_email": "sender@yourcompany.com",
+        "sender_password": "YOUR_EMAIL_PASSWORD",
+        "recipients": ["recipient1@yourcompany.com", "recipient2@yourcompany.com"]
+    },
+    "report_data": {
+        "target": 150,      
+        "completed": 116,   
+        "estimated_monthly_shipment": 55, 
+        "estimated_total": 171, 
+        "estimated_rate": 114
+    }
+}

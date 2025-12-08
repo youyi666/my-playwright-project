@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web PPT 演示播放器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            /* 定义一个 CSS 变量用于动态缩放 */
+            --scale-factor: 1;
+        }
+
+        body { 
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif; 
+            background-color: #111827; /* 深色背景，突出演示内容 */
+            margin: 0;
+            height: 100vh;
+            overflow: hidden; /* 禁止滚动，强制单页显示 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* 幻灯片容器 - 保持 16:9 比例 */
+        .slide-container {
+            width: 1280px;
+            height: 720px;
+            background-color: white;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5); /* 演示时的发光效果 */
+            position: absolute; /* 绝对定位，实现堆叠 */
+            opacity: 0; /* 默认隐藏 */
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease; /* 转场动画 */
+            
+            /* 修改：使用动态变量进行缩放，非激活状态稍微缩小 */
+            transform: scale(calc(var(--scale-factor) * 0.9)); 
+            
+            pointer-events: none; /* 隐藏时不可点击 */
+            z-index: 0;
+        }
+
+        /* 激活状态的幻灯片 */
+        .slide-container.active {
+            opacity: 1;
+            /* 修改：使用动态变量进行完整缩放 */
+            transform: scale(var(--scale-factor));
+            
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        /* 编辑时的聚焦样式 */
+        [contenteditable]:focus {
+            outline: 2px dashed #3b82f6;
+            outline-offset: 4px;
+            border-radius: 4px;
+        }
+        
+        [contenteditable]:hover {
+            cursor: text;
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+
+        /* 底部控制栏样式 */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 10px 20px;
+            border-radius: 30px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            color: white;
+            z-index: 100;
+            transition: opacity 0.3s;
+        }
+        
+        /* 鼠标不动时自动隐藏控制栏 (可选，这里暂时常驻) */
+        .controls button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+        .controls button:hover {
+            background: rgba(255,255,255,0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ================= 幻灯片区域 (内容与之前一致，只增加了 id="slide-N") ================= -->
+
+    <!-- Slide 1: Cover -->
+    <div class="slide-container active flex flex-col justify-center items-center relative bg-slate-900 text-white overflow-hidden" id="slide-1">
+        <div class="absolute top-8 right-8 flex items-center gap-3 opacity-80">
+            <div class="w-8 h-8 border-2 border-white rounded flex items-center justify-center"><i class="fas fa-mountain text-sm"></i></div>
+            <span class="font-bold tracking-widest text-sm" contenteditable="true">YOUR LOGO</span>
+        </div>
+        <div class="absolute top-0 right-0 w-[900px] h-[900px] bg-blue-600 rounded-full blur-[120px] opacity-20 -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
+        <div class="absolute bottom-0 left-0 w-[700px] h-[700px] bg-indigo-600 rounded-full blur-[120px] opacity-20 translate-y-1/3 -translate-x-1/4 pointer-events-none"></div>
+        <div class="z-10 text-center space-y-8 px-20">
+            <div class="inline-block px-4 py-1.5 border border-blue-400/50 rounded-full text-blue-300 text-sm tracking-[0.2em] uppercase mb-4" contenteditable="true">CONFIDENTIAL / 2025 STRATEGY</div>
+            <h1 class="text-7xl font-black tracking-tight leading-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-100 to-blue-200 drop-shadow-lg" contenteditable="true">年度全域增长<br>战略规划报告</h1>
+            <div class="w-24 h-1 bg-blue-500 mx-auto rounded-full"></div>
+            <p class="text-2xl text-slate-300 font-light tracking-wide" contenteditable="true">四阶引擎驱动模型：从爆款打造到全域收官</p>
+        </div>
+        <div class="absolute bottom-12 w-full text-center text-slate-500 text-sm tracking-widest" contenteditable="true">PRESENTED BY 市场营销中心 · 2025.12</div>
+    </div>
+
+    <!-- Slide 2: Growth Path -->
+    <div class="slide-container flex flex-col relative bg-white" id="slide-2">
+        <div class="absolute top-8 right-8 flex items-center gap-3 opacity-40 z-20">
+            <div class="w-8 h-8 bg-slate-200 rounded flex items-center justify-center text-slate-600"><i class="fas fa-mountain text-sm"></i></div>
+            <span class="font-bold tracking-widest text-sm text-slate-400" contenteditable="true">YOUR LOGO</span>
+        </div>
+        <header class="px-14 pt-12 pb-2 z-10">
+            <div class="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-wider rounded mb-2" contenteditable="true">01. GROWTH PATH</div>
+            <div class="flex justify-between items-end">
+                <div>
+                    <h1 class="text-4xl font-extrabold text-slate-800" contenteditable="true">年度阶段性增长路径</h1>
+                    <p class="text-slate-500 mt-2 text-lg" contenteditable="true">关键路径：爆款打样 → 店群分销 → 新商蓄水 → 大促收割</p>
+                </div>
+                <div class="text-right pr-20">
+                    <div class="text-5xl font-black text-indigo-700 leading-none" contenteditable="true">130,000+</div>
+                    <div class="text-slate-400 text-sm mt-1" contenteditable="true">年度累计目标 (台)</div>
+                </div>
+            </div>
+        </header>
+        <main class="flex-1 px-14 relative flex items-end pb-12 z-10">
+            <div class="absolute left-14 right-14 top-[40%] h-[200px] pointer-events-none opacity-20">
+                <svg width="100%" height="100%"><path d="M0,180 C300,180 400,100 1150,20 L1180,10" fill="none" stroke="#2563eb" stroke-width="4" stroke-dasharray="8 8" /></svg>
+            </div>
+            <div class="w-full grid grid-cols-4 gap-6 h-[420px] items-end">
+                <!-- Card 1 -->
+                <div class="w-full flex flex-col relative" style="height: 70%;">
+                    <div class="relative flex-1 w-full rounded-2xl p-5 text-white shadow-xl flex flex-col justify-between bg-gradient-to-br from-blue-400 to-blue-500 shadow-blue-200 transition-transform hover:-translate-y-2">
+                        <div>
+                            <div class="flex justify-between mb-4 opacity-90"><div class="bg-white/20 px-3 py-1 rounded text-xs font-bold">Q1</div><i class="fas fa-rocket text-blue-100 text-xl"></i></div>
+                            <h3 class="text-lg font-bold mb-2" contenteditable="true">爆款驱动期</h3>
+                            <div class="h-[1px] w-full bg-white/30 my-2"></div>
+                            <p class="text-sm opacity-90" contenteditable="true" style="line-height: 1.6">策略：自营裂变 · 养权重</p>
+                        </div>
+                        <div class="mt-auto pt-3 border-t border-white/20"><div class="text-3xl font-black">1.5 万</div></div>
+                    </div>
+                </div>
+                <!-- Card 2 -->
+                <div class="w-full flex flex-col relative" style="height: 78%;">
+                    <div class="relative flex-1 w-full rounded-2xl p-5 text-white shadow-xl flex flex-col justify-between bg-gradient-to-br from-blue-500 to-indigo-600 shadow-indigo-200 transition-transform hover:-translate-y-2">
+                        <div>
+                            <div class="flex justify-between mb-4 opacity-90"><div class="bg-white/20 px-3 py-1 rounded text-xs font-bold">Q2</div><i class="fas fa-box-open text-indigo-100 text-xl"></i></div>
+                            <h3 class="text-lg font-bold mb-2" contenteditable="true">新品驱动期</h3>
+                            <div class="h-[1px] w-full bg-white/30 my-2"></div>
+                            <p class="text-sm opacity-90" contenteditable="true" style="line-height: 1.6">策略：新品上市 · 618爆发</p>
+                        </div>
+                        <div class="mt-auto pt-3 border-t border-white/20"><div class="text-3xl font-black">6 万</div></div>
+                    </div>
+                </div>
+                <!-- Card 3 -->
+                <div class="w-full flex flex-col relative" style="height: 86%;">
+                    <div class="relative flex-1 w-full rounded-2xl p-5 text-white shadow-xl flex flex-col justify-between bg-gradient-to-br from-indigo-600 to-purple-600 shadow-purple-200 transition-transform hover:-translate-y-2">
+                        <div>
+                            <div class="flex justify-between mb-4 opacity-90"><div class="bg-white/20 px-3 py-1 rounded text-xs font-bold">Q3</div><i class="fas fa-users text-purple-100 text-xl"></i></div>
+                            <h3 class="text-lg font-bold mb-2" contenteditable="true">新商驱动期</h3>
+                            <div class="h-[1px] w-full bg-white/30 my-2"></div>
+                            <p class="text-sm opacity-90" contenteditable="true" style="line-height: 1.6">策略：分销拓新 · 蓄水</p>
+                        </div>
+                        <div class="mt-auto pt-3 border-t border-white/20"><div class="text-3xl font-black">8.5 万</div></div>
+                    </div>
+                </div>
+                <!-- Card 4 -->
+                <div class="w-full flex flex-col relative" style="height: 94%;">
+                    <div class="relative flex-1 w-full rounded-2xl p-5 text-white shadow-xl flex flex-col justify-between bg-gradient-to-br from-orange-500 to-red-500 shadow-orange-200 transition-transform hover:-translate-y-2">
+                        <div>
+                            <div class="flex justify-between mb-4 opacity-90"><div class="bg-white/20 px-3 py-1 rounded text-xs font-bold">Q4</div><i class="fas fa-trophy text-yellow-100 text-xl"></i></div>
+                            <h3 class="text-lg font-bold mb-2" contenteditable="true">大促收官期</h3>
+                            <div class="h-[1px] w-full bg-white/30 my-2"></div>
+                            <p class="text-sm opacity-90" contenteditable="true" style="line-height: 1.6">策略：全域共振 · 饱和攻击</p>
+                        </div>
+                        <div class="mt-auto pt-3 border-t border-white/20"><div class="text-3xl font-black">13 万+</div></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Slide 3: SWOT -->
+    <div class="slide-container flex flex-col relative bg-slate-50" id="slide-3">
+        <div class="absolute top-8 right-8 flex items-center gap-3 opacity-40 z-20">
+            <div class="w-8 h-8 bg-slate-200 rounded flex items-center justify-center text-slate-600"><i class="fas fa-mountain text-sm"></i></div>
+            <span class="font-bold tracking-widest text-sm text-slate-400" contenteditable="true">YOUR LOGO</span>
+        </div>
+        <header class="px-14 pt-12 pb-6 z-10">
+            <div class="inline-block px-3 py-1 bg-purple-50 text-purple-600 text-xs font-bold uppercase tracking-wider rounded mb-2" contenteditable="true">02. ANALYSIS</div>
+            <h1 class="text-4xl font-extrabold text-slate-800" contenteditable="true">市场策略 SWOT 分析</h1>
+            <p class="text-slate-500 mt-2 text-lg" contenteditable="true">内部优势与外部机会的交叉分析与应对策略</p>
+        </header>
+        <main class="flex-1 px-14 pb-12 flex items-center justify-center relative">
+            <div class="absolute w-24 h-24 bg-white rounded-full shadow-lg z-20 flex items-center justify-center border-4 border-slate-100">
+                <span class="font-black text-slate-300 text-xl">CORE</span>
+            </div>
+            <div class="w-full h-full grid grid-cols-2 grid-rows-2 gap-4">
+                <div class="bg-white p-8 rounded-2xl shadow-sm border-l-8 border-blue-500 hover:shadow-md transition-shadow hover:-translate-y-1">
+                    <h3 class="text-xl font-bold text-slate-800 mb-2" contenteditable="true"><i class="fas fa-thumbs-up text-blue-500 mr-2"></i> Strengths</h3>
+                    <ul class="list-disc list-inside space-y-2 text-slate-600 text-sm" contenteditable="true"><li>自营店铺权重高</li><li>产品线覆盖全价格段</li><li>线下分销网络成熟</li></ul>
+                </div>
+                <div class="bg-white p-8 rounded-2xl shadow-sm border-l-8 border-red-400 hover:shadow-md transition-shadow hover:-translate-y-1">
+                    <h3 class="text-xl font-bold text-slate-800 mb-2" contenteditable="true"><i class="fas fa-exclamation-triangle text-red-500 mr-2"></i> Weaknesses</h3>
+                    <ul class="list-disc list-inside space-y-2 text-slate-600 text-sm" contenteditable="true"><li>新商初期转化不稳</li><li>中端竞争激烈</li><li>线上认知度不足</li></ul>
+                </div>
+                <div class="bg-white p-8 rounded-2xl shadow-sm border-l-8 border-green-500 hover:shadow-md transition-shadow hover:-translate-y-1">
+                    <h3 class="text-xl font-bold text-slate-800 mb-2" contenteditable="true"><i class="fas fa-lightbulb text-green-500 mr-2"></i> Opportunities</h3>
+                    <ul class="list-disc list-inside space-y-2 text-slate-600 text-sm" contenteditable="true"><li>大促流量红利</li><li>下沉市场需求激增</li><li>直播带货潜力</li></ul>
+                </div>
+                <div class="bg-white p-8 rounded-2xl shadow-sm border-l-8 border-orange-400 hover:shadow-md transition-shadow hover:-translate-y-1">
+                    <h3 class="text-xl font-bold text-slate-800 mb-2" contenteditable="true"><i class="fas fa-shield-alt text-orange-500 mr-2"></i> Threats</h3>
+                    <ul class="list-disc list-inside space-y-2 text-slate-600 text-sm" contenteditable="true"><li>竞品价格战</li><li>流量成本上升</li><li>平台规则不确定</li></ul>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Slide 4: Comparison -->
+    <div class="slide-container flex flex-col relative bg-slate-50" id="slide-4">
+        <div class="absolute top-8 right-8 flex items-center gap-3 opacity-40 z-20">
+            <div class="w-8 h-8 bg-slate-200 rounded flex items-center justify-center text-slate-600"><i class="fas fa-mountain text-sm"></i></div>
+            <span class="font-bold tracking-widest text-sm text-slate-400" contenteditable="true">YOUR LOGO</span>
+        </div>
+        <header class="px-14 pt-12 pb-8 z-10 flex justify-between items-end">
+            <div>
+                <div class="inline-block px-3 py-1 bg-green-50 text-green-600 text-xs font-bold uppercase tracking-wider rounded mb-2" contenteditable="true">04. COMPARISON</div>
+                <h1 class="text-4xl font-extrabold text-slate-800" contenteditable="true">竞品核心参数与策略对比</h1>
+                <p class="text-slate-500 mt-2 text-lg" contenteditable="true">我方新品 (Pro) 与市场主要竞品 A/B 详细对标</p>
+            </div>
+            <div class="flex gap-4 mb-2">
+                <div class="flex items-center gap-2"><div class="w-3 h-3 bg-white border border-gray-300 rounded-full"></div><span class="text-xs text-gray-500">竞品</span></div>
+                <div class="flex items-center gap-2"><div class="w-3 h-3 bg-blue-600 rounded-full"></div><span class="text-xs text-gray-500">我方优势</span></div>
+            </div>
+        </header>
+        <main class="flex-1 px-14 pb-12">
+            <div class="w-full h-full grid grid-cols-3 gap-6">
+                <!-- Col 1 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col hover:shadow-lg transition-shadow">
+                    <div class="text-center pb-4 border-b border-gray-100">
+                        <div class="text-lg font-bold text-gray-600" contenteditable="true">竞品 A</div>
+                        <div class="text-2xl font-black text-gray-800 mt-2" contenteditable="true">¥ 1,299</div>
+                    </div>
+                    <div class="flex-1 py-6 space-y-4 text-sm text-gray-600 text-center">
+                        <div class="p-2 bg-gray-50 rounded">600G 通量</div>
+                        <div class="p-2 bg-gray-50 rounded">2:1 废水比</div>
+                        <div class="p-2 bg-gray-50 rounded">单店铺运营</div>
+                    </div>
+                    <div class="text-center text-xs text-gray-400 font-medium pt-4">份额: 15%</div>
+                </div>
+                <!-- Col 2 -->
+                <div class="bg-blue-600 rounded-xl p-6 shadow-xl flex flex-col transform scale-105 z-10 hover:scale-110 transition-transform">
+                    <div class="text-center pb-4 border-b border-blue-500">
+                        <div class="inline-block px-3 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded-full mb-2">RECOMMENDED</div>
+                        <div class="text-xl font-bold text-white" contenteditable="true">我方新品</div>
+                        <div class="text-3xl font-black text-white mt-2" contenteditable="true">¥ 1,399</div>
+                    </div>
+                    <div class="flex-1 py-6 space-y-4 text-sm text-white text-center">
+                        <div class="p-2 bg-blue-500 rounded font-bold">800G 大通量</div>
+                        <div class="p-2 bg-blue-500 rounded">3:1 超低废水</div>
+                        <div class="p-2 bg-blue-500 rounded">1+2+N 矩阵</div>
+                    </div>
+                    <div class="text-center text-xs text-blue-200 font-medium pt-4">目标: 25%+</div>
+                </div>
+                <!-- Col 3 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col hover:shadow-lg transition-shadow">
+                    <div class="text-center pb-4 border-b border-gray-100">
+                        <div class="text-lg font-bold text-gray-600" contenteditable="true">竞品 B</div>
+                        <div class="text-2xl font-black text-gray-800 mt-2" contenteditable="true">¥ 999</div>
+                    </div>
+                    <div class="flex-1 py-6 space-y-4 text-sm text-gray-600 text-center">
+                        <div class="p-2 bg-gray-50 rounded">400G 通量</div>
+                        <div class="p-2 bg-gray-50 rounded">1.5:1 废水比</div>
+                        <div class="p-2 bg-gray-50 rounded">低价走量</div>
+                    </div>
+                    <div class="text-center text-xs text-gray-400 font-medium pt-4">份额: 10%</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ================= 底部控制栏 ================= -->
+    <div class="controls">
+        <button onclick="prevSlide()" title="上一页 (←)"><i class="fas fa-chevron-left"></i></button>
+        <span id="page-indicator" class="font-mono text-sm">1 / 4</span>
+        <button onclick="nextSlide()" title="下一页 (→/Space)"><i class="fas fa-chevron-right"></i></button>
+        <div class="w-px h-4 bg-white/20 mx-2"></div>
+        <button onclick="toggleFullScreen()" title="全屏 (F11)"><i class="fas fa-expand"></i></button>
+    </div>
+
+    <!-- ================= JavaScript 交互逻辑 ================= -->
+    <script>
+        // 定义一个函数来动态计算缩放比例，实现响应式适应屏幕
+        function handleResize() {
+            // 定义基准宽高 (1280x720)
+            const baseW = 1280;
+            const baseH = 720;
+            const padding = 20; // 预留一些边距，避免紧贴屏幕边缘
+
+            // 计算宽度和高度的缩放比例
+            const scaleX = window.innerWidth / baseW;
+            const scaleY = (window.innerHeight - padding) / baseH; // 高度减去padding
+
+            // 选择较小的比例以确保内容完整显示在屏幕内，乘以0.95留出少许边距美观
+            const finalScale = Math.min(scaleX, scaleY) * 0.95;
+
+            // 设置 CSS 变量 --scale-factor
+            document.documentElement.style.setProperty('--scale-factor', finalScale);
+        }
+
+        // 页面加载和窗口大小改变时调用
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('load', handleResize);
+        handleResize(); // 立即执行一次
+
+        let currentSlide = 1;
+        const totalSlides = 4; // 幻灯片总数
+
+        function showSlide(index) {
+            // 循环逻辑：到最后一张再按下一张回到第一张
+            if (index > totalSlides) index = 1;
+            if (index < 1) index = totalSlides;
+
+            // 隐藏所有幻灯片
+            document.querySelectorAll('.slide-container').forEach(slide => {
+                slide.classList.remove('active');
+            });
+
+            // 显示当前幻灯片
+            const activeSlide = document.getElementById(`slide-${index}`);
+            if (activeSlide) {
+                activeSlide.classList.add('active');
+            }
+
+            // 更新页码
+            document.getElementById('page-indicator').innerText = `${index} / ${totalSlides}`;
+            currentSlide = index;
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        // 全屏切换逻辑
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // 键盘监听
+        document.addEventListener('keydown', function(event) {
+            // 如果用户正在编辑文字，不触发快捷键，防止冲突
+            const isEditing = document.activeElement.isContentEditable;
+            if (isEditing) return;
+
+            switch(event.key) {
+                case "ArrowRight":
+                case " ": // 空格键
+                case "Enter":
+                    nextSlide();
+                    break;
+                case "ArrowLeft":
+                    prevSlide();
+                    break;
+            }
+        });
+
+        // 初始化
+        showSlide(1);
+    </script>
+</body>
+</html>
