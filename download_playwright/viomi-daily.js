@@ -142,14 +142,14 @@ async function generateCoachComment(myChannel, allData, historyData) {
     🔥 **今日人设**：${currentStyle}
     📅 **时间进度**：${timeProgress}%。
     
-    【事实核查】：全场转化率最高的是${maxConvChannel}(${maxConvRate}%)。如果我不如今，必须批评。
-    数据里的百分比是“月度业绩目标达成率”，不是份额。
-    👉 **语言规范**：在提到“${myChannel}”的数据时，必须统一用“我们”来指代，严禁使用“我司”、“本司”这种生疏的称呼。
+    【事实核查】：全场转化率最高的是${maxConvChannel}(${maxConvRate}%)。
     
-    请写一段**极简日报点评** (150字内，3点结构)：
-    🌟 **亮点**：(基于数据表扬)
-    ⚔️ **差距**：(指出和竞品或进度的差距)
-    ⚡ **指令**：(具体动作)
+    👉 **必须严格遵守以下输出格式**（不要改变关键词，否则系统无法识别）：
+    🌟 **亮点**：(一句话概括，基于数据表扬)
+    ⚔️ **差距**：(一句话概括，指出转化率或进度的硬伤)
+    ⚡ **指令**：(给运营团队的具体动作建议)
+    
+    注意：保持犀利，不要废话，每项内容控制在 50 字以内。
     `;
 
     try {
@@ -255,6 +255,7 @@ ${aiComment}
             const g = allGSVData.find(x => x.channel === c) || {rate:0, conversion:0, daily:0};
             const s = allShipmentData.find(x => x.channel === c) || {rate:0};
             const style = c === myChannel ? '**' : '';
+            // ⚠️ 关键：转化率 ${g.conversion}% 必须放在第三个位置
             comparisonTableMd += `| ${style}${c}${style} | ${g.rate}% | ${g.conversion}% | ${s.rate}% | ${g.daily}万 |\n`;
         });
 
@@ -293,8 +294,15 @@ ${comparisonTableMd}
 ${aiComment}
 
 ## 📝 我的思考 (Reflection)
-- [ ] **针对差异**: 
-- [ ] **关键动作**: 
+
+### 1. 策略与价格决策 (Price Moves)
+> 💡 **填写模板**: \`**[[商品名]]** | 💡 决策: #跟价 599 | 📝 备注: 京东降价\`
+> *周报会自动抓取 #跟价 #跟涨 #躺平 等标签*
+- [ ] 
+
+### 2. 关键动作 (Action Items)
+> *完成的事项请打钩 [x]，周报会自动汇总*
+- [ ] 
 `;
         fs.writeFileSync(fullPath, markdownContent);
         console.log(`✅ Obsidian 笔记已生成: ${fullPath}`);

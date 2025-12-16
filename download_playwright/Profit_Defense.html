@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>老海豚Q1涨价策略汇报 - 咨询风格版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+
+        body {
+            background-color: #e5e7eb; /* 灰色背景衬托 PPT 画布 */
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* PPT 画布核心容器 - 锁定 16:9 比例 */
+        #slide-viewport {
+            width: 95vw;
+            aspect-ratio: 16/9;
+            max-height: 95vh;
+            position: relative;
+            background: white;
+            box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+
+        /* 单张幻灯片 */
+        .slide {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column;
+            padding: 3% 4%; /* 留出 PPT 边距 */
+            box-sizing: border-box;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.4s ease-in-out;
+            background: white;
+        }
+        .slide.active { opacity: 1; pointer-events: auto; z-index: 10; }
+
+        /* 排版工具类 */
+        .ppt-header {
+            border-bottom: 2px solid #1e3a8a; /* 深蓝色底线 */
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            display: flex; justify-content: space-between; items-end;
+        }
+        .ppt-title { font-size: 2rem; font-weight: 700; color: #1e3a8a; line-height: 1.1; }
+        .ppt-subtitle { font-size: 1rem; color: #64748b; margin-left: 1rem; }
+        
+        /* 咨询风格表格 */
+        .consulting-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .consulting-table th { background: #f1f5f9; border-top: 2px solid #334155; border-bottom: 1px solid #cbd5e1; text-align: left; padding: 8px; font-weight: 700; color: #334155; }
+        .consulting-table td { border-bottom: 1px solid #e2e8f0; padding: 8px; vertical-align: top; color: #475569; }
+        .consulting-table tr:last-child td { border-bottom: 2px solid #cbd5e1; }
+
+        /* 强调框 */
+        .callout-box {
+            background: #f8fafc;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .callout-title { font-weight: 700; color: #1e40af; font-size: 0.9rem; margin-bottom: 0.3rem; text-transform: uppercase; }
+        
+        /* 可编辑区域 */
+        [contenteditable="true"]:hover { background: #fffbeb; cursor: text; outline: 1px dashed #d1d5db; }
+
+        /* 底部页码 */
+        .slide-footer {
+            position: absolute; bottom: 2%; left: 4%; right: 4%;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 0.5rem;
+            display: flex; justify-content: space-between;
+            font-size: 0.75rem; color: #94a3b8;
+        }
+
+        /* 字体大小微调 - 保证投影清晰 */
+        p, li { font-size: 0.9rem; line-height: 1.5; color: #334155; }
+        strong { color: #0f172a; }
+    </style>
+</head>
+<body>
+
+    <input type="file" id="logoInput" hidden accept="image/*" onchange="handleLogoUpload(this)">
+
+    <div id="slide-viewport">
+        
+        <div class="slide active" id="slide-0">
+            <div class="h-full flex flex-col justify-center relative">
+                <div id="logoArea" class="absolute top-0 right-0 w-32 h-16 border border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50" onclick="triggerLogoUpload()" title="点击上传Logo">
+                    <span class="text-xs text-gray-400">Logo Placehoder</span>
+                </div>
+
+                <div class="w-2/3">
+                    <div class="w-20 h-2 bg-blue-800 mb-8"></div>
+                    <h1 class="text-6xl font-extrabold text-slate-900 mb-6 tracking-tight" contenteditable="true">利润保卫战</h1>
+                    <h2 class="text-3xl font-light text-slate-600 mb-12" contenteditable="true">Q1 价格体系重塑与推广效能提升计划</h2>
+                    
+                    <div class="flex gap-12 text-sm text-slate-500 font-medium">
+                        <div contenteditable="true"><strong>汇报部门：</strong> 运营中心</div>
+                        <div contenteditable="true"><strong>汇报人：</strong> 老海豚</div>
+                        <div contenteditable="true"><strong>日期：</strong> 2025年12月</div>
+                    </div>
+                </div>
+
+                <div class="absolute bottom-10 right-0 w-1/3 p-6 bg-slate-50 border-l-4 border-blue-800">
+                    <h3 class="text-lg font-bold text-blue-900 mb-2">Executive Summary</h3>
+                    <ul class="list-disc list-inside space-y-2 text-sm text-slate-700">
+                        <li><strong>现状：</strong>低价换量失败，费率倒挂。</li>
+                        <li><strong>策略：</strong>权益剥离 + 锚定涨价。</li>
+                        <li><strong>预期：</strong>销量跌30%以内，总利润提升。</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Internal Use Only</span>
+                <span>Page 1</span>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-1">
+            <div class="ppt-header">
+                <div class="ppt-title" contenteditable="true">现状诊断：流量成本与价格倒挂</div>
+                <div class="ppt-subtitle">数据周期：2025.08 - 2025.12</div>
+            </div>
+
+            <div class="flex gap-8 h-full">
+                <div class="w-3/5 flex flex-col">
+                    <div class="flex-1 relative border border-slate-200 p-2 bg-white rounded">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                    <div class="mt-4 flex justify-between text-xs text-slate-500">
+                        <div class="flex items-center gap-2"><div class="w-3 h-3 bg-red-500"></div> 客单价 (ASP) 持续走低</div>
+                        <div class="flex items-center gap-2"><div class="w-3 h-3 bg-blue-500"></div> 推广费率 (Fee Rate) 反向攀升</div>
+                    </div>
+                </div>
+
+                <div class="w-2/5 flex flex-col gap-6">
+                    <div class="callout-box">
+                        <div class="callout-title">核心痛点 (Key Issues)</div>
+                        <ul class="list-disc list-inside space-y-2 text-sm">
+                            <li contenteditable="true"><strong>价格脱敏：</strong>长期官补导致用户心理价位锚定在 ¥550，一旦取消，转化率即刻下跌。</li>
+                            <li contenteditable="true"><strong>人群偏差：</strong>低价策略吸纳了大量“羊毛党”，点击率虚高但转化差，拉高了 CPC。</li>
+                            <li contenteditable="true"><strong>利润击穿：</strong>当前 ASP ¥550 - Cost ¥380 - Fee 16.7% = <strong>仅剩 ¥78 毛利</strong>，难以覆盖运营成本。</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-slate-800 mb-2 text-sm border-b border-slate-200 pb-1">关键月份数据回溯</h4>
+                        <table class="consulting-table">
+                            <thead>
+                                <tr><th>月份</th><th>ASP</th><th>费率</th><th>状态</th></tr>
+                            </thead>
+                            <tbody contenteditable="true">
+                                <tr><td>Aug</td><td>¥692</td><td>9.7%</td><td class="text-green-600 font-bold">健康</td></tr>
+                                <tr><td>Sep</td><td>¥723</td><td>8.4%</td><td class="text-green-600 font-bold">健康</td></tr>
+                                <tr><td>Oct</td><td>¥592</td><td>15.5%</td><td class="text-yellow-600 font-bold">预警</td></tr>
+                                <tr class="bg-red-50"><td>Nov</td><td>¥539</td><td>17.0%</td><td class="text-red-600 font-bold">亏损</td></tr>
+                                <tr class="bg-red-50"><td>Dec</td><td>¥550</td><td>16.7%</td><td class="text-red-600 font-bold">亏损</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Profit Protection Strategy</span>
+                <span>Page 2</span>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-2">
+            <div class="ppt-header">
+                <div class="ppt-title" contenteditable="true">执行策略：SKU 重构与两阶段涨价</div>
+                <div class="ppt-subtitle">目标：Q1 结束前将 ASP 提升至 ¥669</div>
+            </div>
+
+            <div class="flex flex-col h-full gap-6">
+                <div class="w-full bg-slate-50 border border-slate-200 p-4 rounded">
+                    <h4 class="text-sm font-bold text-slate-700 mb-3 uppercase">执行时间轴 (Timeline)</h4>
+                    <div class="flex w-full text-xs text-white text-center font-bold">
+                        <div class="w-1/3 bg-blue-600 py-3 rounded-l border-r border-blue-400 relative">
+                            Phase 1: 权益回收 (W1-W2)
+                            <div class="absolute -bottom-6 left-0 w-full text-slate-500 font-normal">目标价: ¥629</div>
+                        </div>
+                        <div class="w-1/2 bg-blue-500 py-3 border-r border-blue-400 relative">
+                            Phase 2: 锚定涨价 (W3-W5)
+                            <div class="absolute -bottom-6 left-0 w-full text-slate-500 font-normal">目标价: ¥669</div>
+                        </div>
+                        <div class="w-1/6 bg-green-600 py-3 rounded-r relative">
+                            优化期 (W6+)
+                            <div class="absolute -bottom-6 left-0 w-full text-slate-500 font-normal">ROI 提升</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1">
+                    <h4 class="text-sm font-bold text-slate-700 mb-2 border-l-4 border-blue-800 pl-2">SKU 价格带重构表 (SKU Pricing Matrix)</h4>
+                    <table class="consulting-table">
+                        <thead>
+                            <tr>
+                                <th width="20%">SKU 名称</th>
+                                <th width="15%">配置</th>
+                                <th width="15%">策略动作</th>
+                                <th width="10%">原价</th>
+                                <th width="10%">新价</th>
+                                <th width="10%">增利</th>
+                                <th width="20%">备注</th>
+                            </tr>
+                        </thead>
+                        <tbody contenteditable="true">
+                            <tr class="text-slate-400 bg-slate-50">
+                                <td>Old Standard</td>
+                                <td>1 滤芯</td>
+                                <td><span class="bg-slate-200 text-slate-600 px-1 text-xs rounded">下架</span></td>
+                                <td>¥550</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>消除低价记忆，彻底断奶</td>
+                            </tr>
+                            <tr>
+                                <td><strong>New Combo A</strong></td>
+                                <td>+1 滤芯</td>
+                                <td><span class="bg-blue-100 text-blue-800 px-1 text-xs rounded">主推</span></td>
+                                <td>-</td>
+                                <td><strong>¥699</strong></td>
+                                <td class="text-green-600">+¥149</td>
+                                <td>百亿补贴核心款，模糊比价</td>
+                            </tr>
+                            <tr>
+                                <td>Premium Anchor</td>
+                                <td>+2 滤芯</td>
+                                <td><span class="bg-indigo-100 text-indigo-800 px-1 text-xs rounded">锚点</span></td>
+                                <td>-</td>
+                                <td><strong>¥799</strong></td>
+                                <td class="text-green-600">+¥249</td>
+                                <td>高价锚点，衬托 Combo A 性价比</td>
+                            </tr>
+                            <tr>
+                                <td>Core Product</td>
+                                <td>标配</td>
+                                <td><span class="bg-green-100 text-green-800 px-1 text-xs rounded">调价</span></td>
+                                <td>¥550</td>
+                                <td><strong>¥639</strong></td>
+                                <td class="text-green-600">+¥89</td>
+                                <td>Phase 2 阶段执行，取消官补</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="border border-slate-200 p-3 rounded bg-white">
+                        <div class="font-bold text-sm text-red-600 mb-1">❌ 剔除人群 (Negative)</div>
+                        <p class="text-xs text-slate-600">羊毛党、价格敏感型、仅浏览特价页人群。涨价后此类人群转化极低，直接排除。</p>
+                    </div>
+                    <div class="border border-slate-200 p-3 rounded bg-white">
+                        <div class="font-bold text-sm text-green-700 mb-1">✅ 核心人群 (Target)</div>
+                        <p class="text-xs text-slate-600">88VIP、精致妈妈、中产白领。素材重点强调“3年质保”、“母婴级材质”。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Profit Protection Strategy</span>
+                <span>Page 3</span>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-3">
+            <div class="ppt-header">
+                <div class="ppt-title" contenteditable="true">财务测算与风控机制</div>
+                <div class="ppt-subtitle">基于 Cost ¥380 的敏感度分析</div>
+            </div>
+
+            <div class="flex gap-8 h-full">
+                <div class="w-1/2 flex flex-col gap-6">
+                    <div class="callout-box" style="border-left-color: #059669; background: #ecfdf5;">
+                        <div class="callout-title" style="color: #047857;">单品盈利模型 (Unit Economics)</div>
+                        <div class="flex justify-between items-center mt-4">
+                            <div class="text-center">
+                                <div class="text-xs text-slate-500 uppercase">当前毛利</div>
+                                <div class="text-4xl font-bold text-slate-400">¥170</div>
+                            </div>
+                            <i class="fa-solid fa-arrow-right text-slate-300"></i>
+                            <div class="text-center">
+                                <div class="text-xs text-green-700 uppercase">目标毛利</div>
+                                <div class="text-4xl font-bold text-green-600">¥270</div>
+                                <div class="text-xs text-green-700 font-bold bg-green-200 px-2 rounded mt-1">+58%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-slate-800 mb-2 text-sm">盈亏平衡分析 (Breakeven Analysis)</h4>
+                        <div class="bg-white border border-slate-200 p-4 rounded">
+                            <div class="flex justify-between text-sm mb-2">
+                                <span>安全销量跌幅 (Allowable Drop)</span>
+                                <span class="font-bold text-blue-600">37%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-4 rounded-full overflow-hidden">
+                                <div class="bg-blue-600 h-full w-[37%]"></div>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-2 text-justify">
+                                <strong>结论：</strong> 只要涨价导致的销量流失在 <strong>37%</strong> 以内，总利润额依然增长。且更少的订单量意味着更低的仓储、物流和人工负荷。
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="mt-auto border-t-4 border-slate-800 pt-4">
+                        <h4 class="font-bold text-slate-900 mb-2 uppercase text-sm">资源申请 (Approval Request)</h4>
+                        <ul class="list-decimal list-inside text-sm space-y-1 font-medium">
+                            <li>批准 Phase 1 & 2 涨价方案。</li>
+                            <li>允许推广 ROI 在人群洗牌期（约2周）出现波动。</li>
+                            <li>下月 KPI 考核权重向“毛利总额”倾斜。</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="w-1/2 flex flex-col gap-4">
+                    <div class="flex-1 border border-slate-200 p-2 rounded bg-white relative">
+                        <div class="absolute top-2 left-2 text-xs font-bold text-slate-400">风控模拟：价格 vs 转化率</div>
+                        <canvas id="riskChart"></canvas>
+                    </div>
+
+                    <div class="border border-red-200 bg-red-50 p-4 rounded">
+                        <h4 class="font-bold text-red-800 mb-2 text-sm uppercase"><i class="fa-solid fa-triangle-exclamation mr-1"></i> 熔断机制 (Emergency Protocol)</h4>
+                        <p class="text-xs text-red-700 mb-2 font-bold">触发条件：价格上涨 +5% 且 转化率跌幅 >30% 持续3天。</p>
+                        <ol class="list-decimal list-inside text-xs text-red-800 space-y-1">
+                            <li>暂停后续涨价动作。</li>
+                            <li>发放限时大额回血券 (¥50) 挽留转化。</li>
+                            <li>启动老客短信召回，稀释流量成本。</li>
+                        </ol>
+                    </div>
+
+                    <button onclick="replaySlides()" class="w-full py-2 bg-slate-800 text-white text-sm font-bold rounded hover:bg-slate-700 transition">
+                        <i class="fa-solid fa-rotate-right mr-2"></i> 重新演示
+                    </button>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Profit Protection Strategy</span>
+                <span>Page 4</span>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-white px-4 py-2 rounded-full shadow-xl border border-slate-200 z-50 flex items-center gap-4 text-slate-600 text-xs">
+        <span><i class="fa-solid fa-keyboard mr-1"></i> [空格] 翻页</span>
+        <span id="page-display" class="font-bold text-blue-600">1 / 4</span>
+    </div>
+
+    <script>
+        // --- 逻辑控制 ---
+        let currentSlide = 0;
+        const totalSlides = 4;
+
+        function showSlide(index) {
+            document.querySelectorAll('.slide').forEach(el => el.classList.remove('active'));
+            document.getElementById(`slide-${index}`).classList.add('active');
+            document.getElementById('page-display').innerText = `${index + 1} / ${totalSlides}`;
+        }
+
+        function nextSlide() { if(currentSlide < totalSlides - 1) { currentSlide++; showSlide(currentSlide); } }
+        function prevSlide() { if(currentSlide > 0) { currentSlide--; showSlide(currentSlide); } }
+        function replaySlides() { currentSlide = 0; showSlide(0); }
+
+        document.addEventListener('keydown', (e) => {
+            if(['Space', 'ArrowRight', 'ArrowDown'].includes(e.code)) nextSlide();
+            if(['ArrowLeft', 'ArrowUp'].includes(e.code)) prevSlide();
+        });
+
+        // Logo Upload
+        function triggerLogoUpload() { document.getElementById('logoInput').click(); }
+        function handleLogoUpload(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const logoArea = document.getElementById('logoArea');
+                    logoArea.innerHTML = `<img src="${e.target.result}" class="h-full w-auto object-contain">`;
+                    logoArea.classList.remove('border', 'border-dashed');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Charts
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.color = '#64748b';
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Trend Chart
+            new Chart(document.getElementById('trendChart'), {
+                type: 'line',
+                data: {
+                    labels: ['Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: '客单价 (ASP)', data: [692, 723, 592, 539, 550],
+                        borderColor: '#ef4444', borderWidth: 3, tension: 0.4, yAxisID: 'y'
+                    }, {
+                        label: '费率 (Fee Rate)', data: [9.7, 8.4, 15.5, 17.0, 16.7],
+                        borderColor: '#3b82f6', borderWidth: 2, borderDash: [5,5], tension: 0.4, yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { position: 'left', ticks: { color: '#ef4444' } },
+                        y1: { position: 'right', grid: {display:false}, ticks: { color: '#3b82f6' } }
+                    }
+                }
+            });
+
+            // Risk Chart
+            new Chart(document.getElementById('riskChart'), {
+                type: 'line',
+                data: {
+                    labels: ['W1', 'W2', 'W3', 'W4', 'W5'],
+                    datasets: [{
+                        label: 'Price', data: [600, 629, 639, 650, 669],
+                        borderColor: '#eab308', borderWidth: 2
+                    }, {
+                        label: 'CVR', data: [1.8, 1.6, 1.5, 1.45, 1.5],
+                        borderColor: '#3b82f6', borderWidth: 2, yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false },
+                        y1: { display: false }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
