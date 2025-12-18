@@ -1,0 +1,173 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Switch Case Effect</title>
+    <style>
+        :root {
+            /* Switch 盒子通常是半透明磨砂白 */
+            --case-plastic: rgba(255, 255, 255, 0.15);
+            --case-border: rgba(255, 255, 255, 0.3);
+            --spine-dark: rgba(0,0,0,0.2);
+        }
+
+        body {
+            margin: 0; height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            /* 背景深色，突出透明盒子的质感 */
+            background-color: #111;
+            background-image: 
+                radial-gradient(circle at 50% 50%, #222 0%, #000 100%);
+            font-family: sans-serif; overflow: hidden;
+            perspective: 1200px; /* 增强透视感 */
+        }
+
+        .card-wrapper {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        /* === 1. Switch 实体盒子 (半透明外壳) === */
+        .switch-case {
+            position: relative;
+            /* Switch 盒子比例约为 10.5cm x 17cm -> 0.61 */
+            width: 320px; height: 520px;
+            
+            /* 【核心材质】：半透明塑料 */
+            background: var(--case-plastic);
+            backdrop-filter: blur(3px); /* 磨砂感 */
+            border: 1px solid var(--case-border);
+            border-radius: 4px 8px 8px 4px; /* 左侧硬朗，右侧圆润 */
+            
+            /* 【核心布局】：上下15px留白，左侧0，右侧10px */
+            padding: 15px 10px 15px 0; 
+            box-sizing: border-box;
+
+            /* 物理投影 */
+            box-shadow: 
+                0 20px 50px rgba(0,0,0,0.7), /* 远阴影 */
+                inset 1px 0 0 rgba(255,255,255,0.4), /* 脊部高光 */
+                inset -2px 0 5px rgba(0,0,0,0.2); /* 右侧厚度暗部 */
+
+            display: flex; 
+            transform-style: preserve-3d;
+            transition: transform 0.1s linear;
+        }
+
+        /* === 2. 脊部 (左侧转轴) === */
+        .spine-hinge {
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 8px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+            z-index: 10;
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* === 3. 封面纸 (Insert) === */
+        .cover-paper {
+            position: relative;
+            width: 100%; height: 100%;
+            background: #222; /* 纸张背面色 */
+            /* 纸张的边缘有些微的圆角，但左侧是被夹住的 */
+            border-radius: 0 4px 4px 0;
+            overflow: hidden;
+            
+            /* 纸张在塑料壳内部的微弱阴影 */
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            z-index: 5;
+        }
+
+        .cover-image {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* === 4. 塑料外封膜 (反光层) === */
+        /* 这层覆盖在整个盒子最上面，模拟那层透明薄膜 */
+        .plastic-wrap {
+            position: absolute; inset: 0;
+            pointer-events: none; z-index: 20;
+            border-radius: 4px 8px 8px 4px;
+            
+            /* 静态反光：模拟塑料膜的不平整 */
+            background: 
+                linear-gradient(125deg, 
+                    transparent 0%, 
+                    rgba(255,255,255,0.05) 30%, 
+                    rgba(255,255,255,0.0) 40%, 
+                    transparent 100%);
+        }
+
+        /* 动态扫光 */
+        .dynamic-glare {
+            position: absolute; inset: 0;
+            pointer-events: none; z-index: 21;
+            border-radius: 4px 8px 8px 4px;
+            
+            /* 高亮光斑 */
+            background: linear-gradient(115deg, 
+                transparent 40%, 
+                rgba(255,255,255,0.4) 50%, 
+                transparent 60%);
+            transform: translateX(var(--glare-x, -150%));
+            mix-blend-mode: overlay; /* 叠加模式，让黑色部分变亮，白色部分更亮 */
+            filter: blur(2px);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotateX(0); }
+            50% { transform: translateY(-8px) rotateX(1deg); }
+        }
+
+        .debug-msg {
+            position: fixed; bottom: 20px; color: #666; font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card-wrapper">
+        <div class="switch-case" id="card">
+            <div class="spine-hinge"></div>
+            
+            <div class="cover-paper">
+                <img src="./switch_cover.png" class="cover-image" onerror="this.style.background='magenta'">
+            </div>
+
+            <div class="plastic-wrap"></div>
+            <div class="dynamic-glare"></div>
+        </div>
+    </div>
+
+    <div class="debug-msg">拖动鼠标查看光影 / Switch Case Style</div>
+
+    <script>
+        const card = document.getElementById('card');
+
+        document.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            const x = e.clientX - centerX;
+            const y = e.clientY - centerY;
+
+            // 1. 物理旋转 (限制角度，Switch 盒子比较轻薄)
+            const rotateX = -y / 20; 
+            const rotateY = x / 20;
+            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+
+            // 2. 动态反光位置计算
+            const glarePos = ((e.clientX - rect.left) / rect.width) * 100; 
+            card.style.setProperty('--glare-x', `${glarePos - 50}%`);
+        });
+
+        document.addEventListener('mouseleave', () => {
+            card.style.transform = 'rotateX(0) rotateY(0) scale(1)';
+        });
+    </script>
+</body>
+</html>
+    

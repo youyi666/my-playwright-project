@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Disc Case Fix</title>
+    <style>
+        :root {
+            --case-color: #1a1a1a;
+        }
+
+        body {
+            margin: 0; height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            background-color: #050505;
+            background-image: radial-gradient(circle at 50% 50%, #222 0%, #000 100%);
+            font-family: monospace; overflow: hidden;
+            perspective: 1200px;
+        }
+
+        .card-wrapper {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        /* === 实体盒子外壳 === */
+        .disc-case {
+            position: relative;
+            width: 380px; height: 560px;
+            background: var(--case-color);
+            border-radius: 14px;
+            
+            /* 物理阴影：模拟塑料盒厚度 */
+            box-shadow: 
+                0 30px 60px rgba(0,0,0,0.8), /* 投影 */
+                5px 5px 0px #0a0a0a,         /* 侧边厚度 */
+                inset 1px 1px 0px rgba(255,255,255,0.2), /* 顶部高光 */
+                inset -1px -1px 0px rgba(0,0,0,0.5);
+                
+            padding: 12px; 
+            display: flex; justify-content: center; align-items: center;
+            transform-style: preserve-3d;
+            transition: transform 0.05s linear; /* 极速响应 */
+        }
+
+        /* === 封面内凹区域 === */
+        .cover-area {
+            position: relative;
+            width: 100%; height: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #330000; /* 调试色：如果看到红色，说明图片没加载 */
+            
+            /* 内阴影：制造陷进去的感觉 */
+            box-shadow: inset 0 0 20px rgba(0,0,0,1); 
+            transform: translateZ(-1px);
+        }
+
+        /* 图片层 */
+        .card-image {
+            width: 100%; height: 100%; object-fit: cover;
+            display: block;
+            z-index: 1; /* 确保在底层 */
+        }
+
+        /* === 光效层 (叠加在图片之上) === */
+        
+        /* 1. 镭射层 */
+        .holo-foil {
+            position: absolute; inset: 0;
+            background: linear-gradient(125deg, transparent 30%, rgba(255,0,0,0.2) 45%, rgba(0,255,255,0.2) 55%, transparent 70%);
+            background-size: 250% 250%;
+            background-position: var(--pos-x, 50%) var(--pos-y, 50%);
+            mix-blend-mode: color-dodge;
+            pointer-events: none; z-index: 10;
+        }
+
+        /* 2. 塑料反光 (硬高光) */
+        .plastic-glare {
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0) 100%);
+            transform: translateX(var(--glare-x, -100%));
+            mix-blend-mode: overlay;
+            pointer-events: none; z-index: 20;
+        }
+        
+        /* 3. 点光 (跟随鼠标) */
+        .spotlight {
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(255,255,255,0.2) 0%, transparent 50%);
+            pointer-events: none; z-index: 25; mix-blend-mode: screen;
+        }
+
+        /* 动画 */
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotateX(0); }
+            50% { transform: translateY(-10px) rotateX(2deg); }
+        }
+
+        .debug-info {
+            position: fixed; bottom: 30px; color: #666; font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card-wrapper">
+        <div class="disc-case" id="card">
+            <div class="cover-area">
+                <img src="./cover_test.png" class="card-image" alt="封面加载失败">
+                
+                <div class="holo-foil"></div>
+                <div class="plastic-glare"></div>
+                <div class="spotlight"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="debug-info">
+        DEBUG MODE: NO MASK / LOCAL FILE<br>
+        IF RED BACKGROUND = IMAGE MISSING
+    </div>
+
+    <script>
+        const card = document.getElementById('card');
+        const glare = document.querySelector('.plastic-glare');
+
+        document.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            const x = e.clientX - centerX;
+            const y = e.clientY - centerY;
+
+            // 1. 物理倾斜 (3D)
+            const rotateX = -y / 15; 
+            const rotateY = x / 15;
+            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+
+            // 2. 光影计算
+            const percentX = (e.clientX / window.innerWidth) * 100;
+            const percentY = (e.clientY / window.innerHeight) * 100;
+            
+            // 镭射位移
+            card.style.setProperty('--pos-x', `${percentX}%`);
+            card.style.setProperty('--pos-y', `${percentY}%`);
+            
+            // 塑料扫光位移
+            card.style.setProperty('--glare-x', `${(e.clientX / window.innerWidth) * 100}%`);
+            
+            // 聚光灯位置
+            const relX = e.clientX - rect.left;
+            const relY = e.clientY - rect.top;
+            card.style.setProperty('--mouse-x', `${relX}px`);
+            card.style.setProperty('--mouse-y', `${relY}px`);
+        });
+
+        document.addEventListener('mouseleave', () => {
+            card.style.transform = 'rotateX(0) rotateY(0) scale(1)';
+        });
+        
+    </script>
+</body>
+</html>
+    

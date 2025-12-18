@@ -1,0 +1,197 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Switch Case Material Test</title>
+    <style>
+        :root {
+            /* 材质调优：更清透的塑料 */
+            --plastic-color: rgba(255, 255, 255, 0.12);
+            --border-highlight: rgba(255, 255, 255, 0.5);
+            --border-shadow: rgba(0, 0, 0, 0.4);
+        }
+
+        body {
+            margin: 0; height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden;
+            perspective: 1200px;
+            
+            /* === 测试用背景：高对比网格 === */
+            /* 这种背景能帮你一眼看出哪里是“透明的”，哪里是“实心的” */
+            background-color: #1a0b2e;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 0, 255, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .scene { position: relative; }
+
+        /* === 1. 物理外壳 === */
+        .case-shell {
+            position: relative;
+            width: 330px; height: 530px; 
+            
+            /* 材质核心：磨砂玻璃感 */
+            background: var(--plastic-color);
+            backdrop-filter: blur(6px); /* 透过盒子看背景会模糊，证明它是透明的 */
+            -webkit-backdrop-filter: blur(6px);
+
+            border-radius: 2px 12px 12px 2px;
+            
+            /* 物理边框 */
+            border-top: 1px solid var(--border-highlight);
+            border-bottom: 1px solid var(--border-shadow);
+            border-right: 1px solid var(--border-shadow);
+            border-left: none;
+
+            /* 这里的 overflow hidden 是修复光效溢出的关键 */
+            overflow: hidden; 
+
+            padding: 8px 10px 8px 0; 
+            box-sizing: border-box;
+
+            /* 阴影加深，增强立体感 */
+            box-shadow: 
+                0 30px 60px rgba(0,0,0,0.7),
+                inset -2px -2px 6px rgba(0,0,0,0.2), /* 内部凹陷感 */
+                inset 1px 1px 2px rgba(255,255,255,0.3);
+            
+            transition: transform 0.1s linear, width 0.5s, height 0.5s;
+            transform-style: preserve-3d;
+        }
+
+        /* 横版自适应 */
+        .case-shell.horizontal {
+            width: 530px; height: 330px;
+            border-radius: 2px 12px 12px 2px;
+            padding: 8px 10px 8px 0; 
+        }
+
+        /* === 2. 脊部处理 (左侧) === */
+        .spine-wrap-shadow {
+            position: absolute; left: 0; top: 0; bottom: 0; width: 25px; 
+            z-index: 20; pointer-events: none;
+            background: linear-gradient(to right, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 20%, transparent 100%);
+        }
+        
+        .spine-highlight {
+            position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+            background: rgba(255,255,255,0.5);
+            z-index: 25;
+            box-shadow: 1px 0 3px rgba(0,0,0,0.5);
+        }
+
+        /* === 3. 纸张层 === */
+        .paper-layer {
+            position: relative; width: 100%; height: 100%;
+            background: #e0e0e0;
+            overflow: hidden;
+            border-radius: 0 4px 4px 0;
+            /* 降低纸张对比度，模拟印刷品在塑料下的效果 */
+            filter: contrast(0.95) brightness(0.95);
+        }
+
+        .cover-img {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+        }
+
+        /* === 4. 塑料光效 (严格限制在 Shell 内) === */
+        .plastic-sheen {
+            position: absolute; inset: 0; z-index: 30; pointer-events: none;
+            /* 噪点纹理：这是增加真实感的秘诀，让塑料看起来不那么像“代码生成的” */
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+            opacity: 0.6;
+            mix-blend-mode: overlay;
+        }
+
+        .light-glare {
+            position: absolute; top: -50%; bottom: -50%; left: -50%; right: -50%; /* 扩大光照渲染区域，但被父级hidden截断 */
+            z-index: 31; pointer-events: none;
+            
+            /* 更柔和、更宽的光 */
+            background: linear-gradient(115deg, 
+                transparent 40%, 
+                rgba(255,255,255,0.25) 48%, 
+                rgba(255,255,255,0.05) 52%, 
+                transparent 60%);
+            
+            transform: translateX(var(--glare-x, -200%)); /* 默认移出视野 */
+            mix-blend-mode: screen; /* Screen 模式会让光更透亮 */
+            transition: transform 0.1s linear; /* 平滑移动 */
+        }
+
+        .debug {
+            position: fixed; bottom: 20px; width: 100%; text-align: center;
+            color: #fff; font-family: monospace; font-size: 12px; opacity: 0.7;
+            text-shadow: 0 1px 2px black;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scene">
+        <div class="case-shell" id="card">
+            <div class="spine-highlight"></div>
+            <div class="spine-wrap-shadow"></div>
+
+            <div class="paper-layer">
+                <img src="./switch_v3.jpg" class="cover-img" id="coverImage">
+            </div>
+
+            <div class="plastic-sheen"></div>
+            <div class="light-glare"></div>
+        </div>
+    </div>
+
+    <div class="debug" id="debugText">背景已更换为高对比网格，以测试透明磨砂效果</div>
+
+    <script>
+        const card = document.getElementById('card');
+        const img = document.getElementById('coverImage');
+        const debugText = document.getElementById('debugText');
+
+        // 图片加载适配
+        img.onload = function() {
+            const w = this.naturalWidth;
+            const h = this.naturalHeight;
+            if (w > h) {
+                card.classList.add('horizontal');
+                debugText.innerText += " [模式: 横版礼盒]";
+            } else {
+                debugText.innerText += " [模式: 竖版标准]";
+            }
+        };
+
+        // 交互逻辑
+        document.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const x = e.clientX - centerX;
+            const y = e.clientY - centerY;
+
+            // 旋转
+            const rotateX = -y / 25; 
+            const rotateY = x / 25;
+            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+
+            // 光位计算 (让光跑得比鼠标慢一点，更有厚重感)
+            const glarePos = ((e.clientX - rect.left) / rect.width) * 100; 
+            // 限制范围，虽然有 overflow:hidden，但限制一下计算更保险
+            const safeGlare = Math.max(-100, Math.min(200, glarePos - 50));
+            card.style.setProperty('--glare-x', `${safeGlare}%`);
+        });
+
+        // 移出时复位
+        document.addEventListener('mouseleave', () => {
+            card.style.transform = 'rotateX(0) rotateY(0)';
+            // 让光平滑地滑出画面，或者消失
+            card.style.setProperty('--glare-x', '-200%');
+        });
+    </script>
+</body>
+</html>
+    
