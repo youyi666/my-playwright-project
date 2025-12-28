@@ -15,3 +15,4 @@ pdd_auth_state.json
 structure.txt
 download_playwright/exc_data/
 download_playwright/sql_data/
+edge_user_data/
