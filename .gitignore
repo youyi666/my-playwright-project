@@ -13,6 +13,5 @@ pdd_auth_state.json
 /download_playwright/PDD/pdd-auth-profile/
 /pdd-auth-profile/
 structure.txt
-download_playwright/exc_data/
 download_playwright/sql_data/
 edge_user_data/
