@@ -832,63 +832,60 @@ function groupConsecutiveDates(dates) {
 
 
 /**
- * 模拟点击日历选择两个日期范围
+ * 健壮的日期范围选择函数 (自动处理重绘、不稳定类名及确认按钮)
  * @param {import('playwright').Page} page 
- * @param {string} dateStrStart - YYYY-MM-DD 格式的起始日期 (D_start)
- * @param {string} dateStrEnd - YYYY-MM-DD 格式的结束日期 (D_end + 1)
+ * @param {string} dateStrStart - YYYY-MM-DD
+ * @param {string} dateStrEnd - YYYY-MM-DD
  */
 async function selectDateRange(page, dateStrStart, dateStrEnd) {
-    // 两个日期的日期部分，用于定位日历上的数字
-    const dayStart = dateStrStart.split('-')[2];
-    const dayEnd = dateStrEnd.split('-')[2];
-    
-    // 简化处理：假设目标月份在日历的右侧面板 (第二个 tableWrapper) 可见。
+    // 1. 数据清洗：去除日期的前导零 (如 "05" -> "5")，适配日历显示
+    const dayStart = parseInt(dateStrStart.split('-')[2], 10).toString();
+    const dayEnd = parseInt(dateStrEnd.split('-')[2], 10).toString();
 
-    const contentWrapperLocator = page.locator('.RPR_contentPickerWrapper_5-164-0');
-    await contentWrapperLocator.waitFor({ state: 'visible', timeout: 10000 }); 
-    
-    // 定位器：右侧日历面板 (通常是 .RPR_tableWrapper_5-164-0 的第二个)
-    const rightPanelLocator = contentWrapperLocator.locator('.RPR_tableWrapper_5-164-0').nth(1);
+    // 2. 锁定日历弹窗 (使用最稳定的 data-testid)
+    const calendarContainer = page.locator('[data-testid="beast-core-portal"]');
+    await calendarContainer.waitFor({ state: 'visible', timeout: 10000 });
 
     /**
-     * 点击指定日期的逻辑
-     * @param {string} dayText - 要点击的日期数字
-     * @param {string} dateFullStr - 完整的 YYYY-MM-DD 日期
+     * 内部辅助：循环探测点击可见的日期
      */
-    const clickDateInPanel = async (dayText, dateFullStr) => {
-        // 查找右侧面板中非禁用且文本匹配的日期 div
-        const dateLocator = rightPanelLocator
-            .locator(`.RPR_tdDay_5-164-0:not(.RPR_disabled_5-164-0) > div`, { hasText: dayText })
-            .first();
-
-        try {
-            await dateLocator.waitFor({ state: 'visible', timeout: 5000 });
-            await dateLocator.click();
-            console.log(` -> 已点击日期: ${dateFullStr} (${dayText}日)。`);
-        } catch (e) {
-            // 如果日期不在右侧可见，则尝试在左侧面板查找
-            const leftPanelLocator = contentWrapperLocator.locator('.RPR_tableWrapper_5-164-0').nth(0);
-            const fallbackLocator = leftPanelLocator
-                .locator(`.RPR_tdDay_5-164-0:not(.RPR_disabled_5-164-0) > div`, { hasText: dayText })
-                .first();
-                
+    const clickRobust = async (targetDay, type) => {
+        const candidates = calendarContainer.getByText(targetDay, { exact: true });
+        const count = await candidates.count();
+        let success = false;
+        for (let i = 0; i < count; i++) {
             try {
-                await fallbackLocator.waitFor({ state: 'visible', timeout: 2000 });
-                await fallbackLocator.click();
-                console.log(` -> (Fallback) 已点击日期: ${dateFullStr} (${dayText}日)。`);
-            } catch (error) {
-                // 如果仍失败，可能需要翻页或日期不可用
-                throw new Error(`无法点击日期 ${dateFullStr} (${dayText}日)，可能不在当前日历视图或被禁用。`);
-            }
+                const el = candidates.nth(i);
+                if (!await el.isVisible()) continue;
+                // force: true 防止被 tooltip 遮挡
+                await el.click({ timeout: 1000, force: true });
+                console.log(`   -> [${type}] 点击 "${targetDay}" 成功 (nth:${i})`);
+                success = true;
+                break;
+            } catch (e) { continue; }
         }
-        await randomDelay(HUMAN_LIKE_DELAY_MIN_MS, HUMAN_LIKE_DELAY_MAX_MS);
+        if (!success) throw new Error(`无法在日历中点击 ${type}: ${targetDay}`);
     };
 
-    // 1. 点击起始日期 (D_start)
-    await clickDateInPanel(dayStart, dateStrStart);
+    // 3. 执行操作：点击开始 -> 等待 -> 点击结束 -> 等待
+    console.log(` -> 正在选择日期: ${dayStart} 至 ${dayEnd}`);
+    await clickRobust(dayStart, "起始日期");
+    await randomDelay(600, 1000); // 等待选中态渲染
     
-    // 2. 点击结束日期 (D_end + 1)
-    await clickDateInPanel(dayEnd, dateStrEnd); 
+    await clickRobust(dayEnd, "结束日期");
+    await randomDelay(500, 800);
+
+    // 4. 点击确认按钮 (封装在这里最安全)
+    // 查找名为“确认”的按钮，或者文本完全等于“确认”的按钮
+    const confirmBtn = calendarContainer.locator('button').filter({ hasText: /^确认$/ })
+        .or(calendarContainer.getByRole('button', { name: '确认' }));
+    
+    if (await confirmBtn.isVisible()) {
+        await confirmBtn.click();
+        console.log(' -> 已点击日历内部的“确认”按钮');
+    } else {
+        console.warn(' -> 未找到确认按钮，可能是自动确认模式？');
+    }
 }
 
 // ======================= [订单报表下载任务 (修复下载逻辑)] =======================
@@ -898,26 +895,23 @@ async function selectDateRange(page, dateStrStart, dateStrEnd) {
  * @param {import('playwright').Page} page - Playwright Page 对象.
  */
 async function pddOrderDownloadAndImportTask(page) {
-    console.log(`\n--- 📦 [任务 3/3] 正在执行订单报表下载、导入及归档任务 (基于数据库查漏补缺, 回溯 ${ORDER_CHECK_PAST_DAYS} 天) ---`);
+    console.log(`\n--- 📦 [任务 3/3] 正在执行订单报表下载、导入及归档任务 (回溯 ${ORDER_CHECK_PAST_DAYS} 天) ---`);
     
-    // 1. 初始化导入和归档本地已存在但未处理的文件 (按订单号查重)
+    // 1. 初始化本地文件
     await initialOrderImportAndArchive();
     
-    // 2. 查询数据库，获取缺失的日期 (按支付日期查漏)
+    // 2. 数据库查漏
     const datesToDownloadSet = await getMissingDatesFromDatabase(ORDER_CHECK_PAST_DAYS);
-    const sortedDatesToDownload = Array.from(datesToDownloadSet).sort(); // 排序确保分组正确
+    const sortedDatesToDownload = Array.from(datesToDownloadSet).sort();
     
     if (sortedDatesToDownload.length === 0) {
-        console.log(`✅ 最近 ${ORDER_CHECK_PAST_DAYS} 天的订单报表数据完整，无需下载。`);
+        console.log(`✅ 数据完整，无需下载。`);
         return;
     }
 
-    // 3. 将缺失日期分组为连续范围 [D_start, D_end + 1]
+    // 3. 分组
     const dateRangesToDownload = groupConsecutiveDates(sortedDatesToDownload);
-    
-    console.log(`\n发现 ${sortedDatesToDownload.length} 个缺失日期，将合并为 ${dateRangesToDownload.length} 个下载范围:`);
-    dateRangesToDownload.forEach(r => console.log(` -> 范围: ${r.start} - ${r.end}`));
-    console.log('---');
+    console.log(`\n发现 ${sortedDatesToDownload.length} 个缺失日期，分为 ${dateRangesToDownload.length} 组。`);
     
     let downloadCounter = 0;
 
@@ -925,126 +919,139 @@ async function pddOrderDownloadAndImportTask(page) {
         const { start: dateStrStart, end: dateStrEnd } = range;
         let filePath = '';
         try {
-            console.log(`\n[处理中] 订单日期范围: ${dateStrStart} 至 ${dateStrEnd}`);
+            console.log(`\n[处理中] 范围: ${dateStrStart} 至 ${dateStrEnd}`);
             await page.goto(ORDER_LIST_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
-            console.log(' -> 成功访问订单列表页。');
-
-            // 尝试处理可能出现的活动/提示弹窗
+            
+            // 处理弹窗
             try {
-                const closeButton = page.locator('button:has-text("我知道了"), button[aria-label*="关闭"], [aria-label*="我知道了"]').first();
-                await closeButton.waitFor({ state: 'visible', timeout: 3000 });
-                await closeButton.click();
-                await randomDelay(HUMAN_LIKE_DELAY_MIN_MS, HUMAN_LIKE_DELAY_MAX_MS);
-            } catch (e) {
-                // ...
+                const closeButton = page.getByRole('button', { name: '我知道了' }).or(page.locator('[aria-label*="关闭"]')).first();
+                if (await closeButton.isVisible({ timeout: 3000 })) {
+                    await closeButton.click();
+                }
+            } catch (e) {}
+
+            await randomDelay(HUMAN_LIKE_DELAY_MIN_MS, HUMAN_LIKE_DELAY_MAX_MS);
+            
+            // 步骤 A: 点击“全部” Tab (修复：移除不稳定类名，使用文本匹配)
+            // 查找包含“全部”文本的 li 元素，且通常是点击项
+            const allTab = page.locator('li').filter({ hasText: /^全部$/ }).first();
+            // 如果上面的找不到，尝试更宽泛的匹配
+            if (await allTab.isVisible()) {
+                 await allTab.click();
+                 console.log(' -> 已点击“全部”状态。');
+            }
+            await randomDelay(500, 1000);
+
+            // ================= [修复开始：增强的日期选择器打开逻辑] =================
+            // 步骤 B: 点击日期输入框 (带重试机制，确保日历弹窗真正打开)
+            const dateInput = page.locator('input[data-testid="beast-core-rangePicker-htmlInput"]');
+            
+            // 我们显式定义我们要等待的日历容器，这也是报错中缺失的元素
+            const datePickerPortal = page.locator('[data-testid="beast-core-portal"]');
+            
+            let isPickerOpen = await datePickerPortal.isVisible();
+            let retryCount = 0;
+
+            // 循环尝试点击，直到弹窗出现或达到最大重试次数
+            while (!isPickerOpen && retryCount < 3) {
+                if (retryCount > 0) {
+                    console.log(`   -> ⚠️ 日历弹窗未出现，正在重试点击 (${retryCount}/3)...`);
+                }
+                
+                // 使用 force: true 强制点击，防止被透明层或 Tooltip 遮挡
+                await dateInput.click({ force: true });
+                
+                try {
+                    // 点击后等待 3 秒看弹窗是否出来
+                    await datePickerPortal.waitFor({ state: 'visible', timeout: 3000 });
+                    isPickerOpen = true;
+                    console.log(' -> ✅ 日期选择器已成功打开。');
+                } catch (e) {
+                    // 如果超时没出来，增加计数器，稍作等待后重试
+                    retryCount++;
+                    await randomDelay(1000, 2000);
+                }
             }
 
-            await randomDelay(HUMAN_LIKE_DELAY_MIN_MS, HUMAN_LIKE_DELAY_MAX_MS);
+            if (!isPickerOpen) {
+                throw new Error('❌ 严重错误：尝试多次仍无法打开日期选择器，任务终止。');
+            }
             
-            // 步骤 A: 点击“全部” Tab
-            const allTab = page.locator('li.NewQuickTab_tab-border-bottom__3QEAw:has-text("全部")');
-            await allTab.waitFor({ state: 'visible', timeout: 10000 });
-            await allTab.click();
-            console.log(' -> 已点击订单状态“全部”。');
-            await randomDelay(HUMAN_LIKE_DELAY_MIN_MS, HUMAN_LIKE_DELAY_MAX_MS);
+            await randomDelay(500, 1000);
 
-            // 步骤 B: 点击日期输入框
-            const dateInput = page.locator('input[placeholder="请选择日期"][data-testid="beast-core-rangePicker-htmlInput"]');
-            await dateInput.waitFor({ state: 'visible', timeout: 30000 });
-            await dateInput.click();
-            console.log(' -> 已点击日期输入框。');
-            await randomDelay(HUMAN_LIKE_DELAY_MIN_MS, HUMAN_LIKE_DELAY_MAX_MS);
-
-            // 步骤 C: 点击“归零”
-            const resetLink = page.locator('a:has-text("归零")').first(); 
-            await resetLink.click();
-            console.log(' -> 已点击“归零”。');
-            await randomDelay(HUMAN_LIKE_DELAY_MIN_MS, HUMAN_LIKE_DELAY_MAX_MS);
+            // 步骤 C: 点击“归零” (修复：使用 getByText 更直观)
+            // 注意：因为上面已经确保 datePickerPortal 打开了，这里可以放心地找里面的元素
+            const resetLink = page.getByText('归零').first();
+            if (await resetLink.isVisible()) {
+                await resetLink.click();
+                console.log(' -> 已重置日期。');
+                await randomDelay(500, 800);
+            }
+            // ================= [修复结束] =================
             
-            // 步骤 D: 选择日期范围 (D_start 到 D_end + 1)
-            console.log(` -> 准备选择日期范围: ${dateStrStart} 至 ${dateStrEnd}`);
+            // 步骤 D & E: 选择日期并确认 (功能合并)
+            // 这一步现在会自动处理点击数字和点击确认按钮
             await selectDateRange(page, dateStrStart, dateStrEnd); 
             
-            // 步骤 E: 点击确认
-            const confirmButton = page.locator('.RPR_footerWrapper_5-164-0').getByRole('button', { name: '确认' });
-            await confirmButton.click();
-            console.log(' -> 已点击日期选择确认按钮。');
+            // 注意：原代码的“步骤 E：点击确认”已被移除，因为 selectDateRange 内部已经处理了。
+
             await randomDelay(SHORT_DELAY_MIN_MS, SHORT_DELAY_MAX_MS); 
 
             // 步骤 F: 点击“查询”
             const queryButton = page.getByRole('button', { name: '查询', exact: true });
             await queryButton.click();
-            console.log(' -> 已点击查询按钮。等待数据加载...');
+            console.log(' -> 已点击查询，等待加载...');
             await page.waitForTimeout(3000); 
 
             // 步骤 G: 点击“批量导出”
             const batchExportButton = page.getByRole('button', { name: '批量导出' });
             await batchExportButton.click();
-            console.log(' -> 已点击“批量导出”。');
-            await randomDelay(HUMAN_LIKE_DELAY_MIN_MS, HUMAN_LIKE_DELAY_MAX_MS);
+            console.log(' -> 已点击批量导出。');
+            await randomDelay(1000, 2000);
             
-            // 步骤 H: 点击“生成报表”并等待跳转 
+            // 步骤 H: 点击“生成报表”
             const generateReportButton = page.getByRole('button', { name: '生成报表' });
-
             await generateReportButton.click();
-            console.log(' -> 已点击“生成报表”。等待报表生成和自动跳转 (固定等待 10 秒)...');
+            console.log(' -> 已生成报表，等待跳转 (10s)...');
             
-            // 【修改点 3.1：保留固定等待，依赖自动跳转】
+            // 步骤 I: 等待跳转 (保持原有逻辑)
             await page.waitForTimeout(10000); 
+
+            // 步骤 J: 下载
+            console.log(' -> 准备下载...');
+            const downloadPromise = page.waitForEvent('download', { timeout: 120000 });
+
+            // 修复：移除 .list 类名依赖，直接找包含“下载报表”按钮的区域
+            const downloadButton = page.getByRole('button', { name: '下载报表' }).first();
             
-            // 步骤 I: 【删除】主动导航到报表列表页，避免中断自动跳转流程。
-            /*
-            console.log(` -> 主动导航到报表列表页: ${REPORT_LIST_URL}`);
-            await page.goto(REPORT_LIST_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
-            await page.waitForTimeout(5000); // 确保列表内容加载完成
-            */
-
-            // 步骤 J (原 I): 监听下载并点击最新的“下载报表”按钮
-            console.log(' -> 正在查找“下载报表”按钮...');
-            const downloadPromise = page.waitForEvent('download', { timeout: 120000 }); // 延长下载超时时间
-
-            const firstReportBox = page.locator('.list .download-box').first();
-            const downloadButton = firstReportBox.getByRole('button', { name: '下载报表' }); 
-            
-            // 【修改点 3.2：删除显式等待，依赖 click() 的自动等待或隐式等待】
-            // await firstReportBox.waitFor({ state: 'visible', timeout: 30000 });
-            // await downloadButton.waitFor({ state: 'visible', timeout: 10000 });
-
+            // 确保按钮出现了再点
+            await downloadButton.waitFor({ state: 'visible', timeout: 30000 });
             await downloadButton.click();
-            console.log(' -> 已点击最新的“下载报表”按钮。等待文件下载...');
-
+            
             const download = await downloadPromise;
             const suggestedFilename = download.suggestedFilename();
-            // 文件路径使用原文件名
             filePath = path.join(ORDER_DOWNLOAD_FOLDER, suggestedFilename);
             await download.saveAs(filePath);
             
-            console.log(`✅ [成功] 订单报表已保存到: ${filePath}`);
-
+            console.log(`✅ [下载成功] ${filePath}`);
             downloadCounter++;
 
+            // 批次休息逻辑...
             if (downloadCounter > 0 && downloadCounter % DOWNLOADS_PER_BATCH === 0) {
-                console.log(`\n--- 已连续下载 ${DOWNLOADS_PER_BATCH} 个订单文件，执行一次长暂停以模拟人类行为 ---`);
+                console.log(`\n--- 休息中... ---`);
                 await randomDelay(LONG_DELAY_MIN_MS, LONG_DELAY_MAX_MS);
-                console.log('--- 长暂停结束，继续任务 ---\n');
             } else {
                 await randomDelay(SHORT_DELAY_MIN_MS, SHORT_DELAY_MAX_MS);
             }
             
         } catch (error) {
-            console.error(`❌ [失败] 处理订单日期范围 ${dateStrStart} - ${dateStrEnd} 时遇到错误: ${error.message}`);
-            console.error(' -> 将跳过这个范围，继续下一个。');
+            console.error(`❌ [失败] ${dateStrStart}-${dateStrEnd}: ${error.message}`);
         }
     }
     
-    console.log('\n--- 所有订单报表下载任务已处理完毕！---');
-    
-    // 下载完成后，再次运行初始化导入函数来处理本次新下载的文件
+    console.log('\n--- 任务结束 ---');
     if (downloadCounter > 0) {
-        console.log(`\n--- 新下载 ${downloadCounter} 个文件，再次执行导入和归档操作 ---`);
         await initialOrderImportAndArchive();
-    } else {
-        console.log('本次没有新下载文件，无需二次导入。');
     }
 }
 
