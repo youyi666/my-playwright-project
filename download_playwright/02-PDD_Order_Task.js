@@ -1,5 +1,5 @@
 // 02-PDD_Order_Task.js - 专注于拼多多订单报表下载与入库
-// [2025-01-17 修复版 V2] 修复“全部订单”包含后缀问题 & 增强日期弹窗稳定性
+// [2025-01-23 修复版 V19] 基于诊断日志确认结构，采用“智能等待+循环刷新”策略，解决渲染不稳定的问题
 
 const { chromium } = require('playwright');
 const fs = require('fs/promises');
@@ -15,7 +15,7 @@ const userDataDir = path.join(__dirname, 'PDD', 'pdd-auth-profile');
 const ORDER_DOWNLOAD_FOLDER = path.join(__dirname, 'exc_data', '订单_订单查询'); 
 const ORDER_ARCHIVE_FOLDER = path.join(ORDER_DOWNLOAD_FOLDER, '已导入');
 const ORDER_CHECK_PAST_DAYS = 90; // 回溯检查的天数
-const ORDER_LIST_URL = 'https://mms.pinduoduo.com/orders/list?msfrom=mms_sidenav'; 
+const ORDER_LIST_URL = 'https://mms.pinduoduo.com/orders/list?msfrom=mms_sidenav&tab=0'; 
 
 // 3. 行为模拟配置
 const DOWNLOADS_PER_BATCH = 15;
@@ -28,7 +28,7 @@ const HUMAN_LIKE_DELAY_MAX_MS = 1500;
 
 // 4. 数据库配置
 const CENTRAL_DB_PATH = path.join(__dirname, 'sql_data', 'TmallDataCenter.db');
-const DB_ORDER_TABLE_NAME = 'pddorder'; // 订单报表表名
+const DB_ORDER_TABLE_NAME = 'pddorder'; 
 const ORDER_PRIMARY_KEY = '订单号';
 const ORDER_PAYMENT_DATE_HEADER = '支付日期'; 
 
@@ -59,7 +59,7 @@ async function moveFileToArchive(sourcePath, archiveDir, newFileName = null) {
     }
 }
 
-// ======================= [数据库逻辑 - 订单报表] =======================
+// ======================= [数据库逻辑] =======================
 
 function formatPaymentDate(dateTimeStr) {
     if (!dateTimeStr) return null;
@@ -353,19 +353,16 @@ function groupConsecutiveDates(dates) {
     return ranges;
 }
 
-// [2025-01-17 优化] 增强版 selectDateRange：能自动尝试重新打开弹窗
 async function selectDateRange(page, dateStrStart, dateStrEnd) {
     const dayStart = parseInt(dateStrStart.split('-')[2], 10).toString();
     const dayEnd = parseInt(dateStrEnd.split('-')[2], 10).toString();
 
     const calendarContainer = page.locator('[data-testid="beast-core-portal"]');
     
-    // 检查弹窗是否可见，如果不可见，尝试点击输入框重新打开
     if (!await calendarContainer.isVisible()) {
         console.log(' -> ⚠️ 检测到日历弹窗已关闭，尝试重新打开...');
         const dateInput = page.locator('input[data-testid="beast-core-rangePicker-htmlInput"]');
         await dateInput.click({ force: true });
-        // 等待弹窗出现
         try {
             await calendarContainer.waitFor({ state: 'visible', timeout: 5000 });
             console.log(' -> ✅ 重新打开日历弹窗成功。');
@@ -373,25 +370,31 @@ async function selectDateRange(page, dateStrStart, dateStrEnd) {
             throw new Error('❌ 无法打开日历弹窗，后续操作无法继续。');
         }
     } else {
-        // 如果已经可见，还是稍微 wait 一下确保状态稳定
         await calendarContainer.waitFor({ state: 'visible', timeout: 5000 });
     }
+
+    await page.waitForTimeout(1500); 
 
     const clickRobust = async (targetDay, type) => {
         const candidates = calendarContainer.getByText(targetDay, { exact: true });
         const count = await candidates.count();
-        let success = false;
+        console.log(`[调试] ${type}: 在日历中找到了 ${count} 个数字 "${targetDay}"`);
+
+        let clickedAny = false;
         for (let i = 0; i < count; i++) {
             try {
                 const el = candidates.nth(i);
-                if (!await el.isVisible()) continue;
+                if (!await el.isVisible()) {
+                    continue;
+                }
                 await el.click({ timeout: 1000, force: true });
-                console.log(`   -> [${type}] 点击 "${targetDay}" 成功 (nth:${i})`);
-                success = true;
-                break;
-            } catch (e) { continue; }
+                clickedAny = true;
+                await page.waitForTimeout(200); 
+            } catch (e) {}
         }
-        if (!success) throw new Error(`无法在日历中点击 ${type}: ${targetDay}`);
+        if (!clickedAny) {
+            throw new Error(`无法在日历中点击 ${type}: ${targetDay}`);
+        }
     };
 
     console.log(` -> 正在选择日期: ${dayStart} 至 ${dayEnd}`);
@@ -405,9 +408,6 @@ async function selectDateRange(page, dateStrStart, dateStrEnd) {
         .or(calendarContainer.getByRole('button', { name: '确认' }));
     if (await confirmBtn.isVisible()) {
         await confirmBtn.click();
-        console.log(' -> 已点击日历内部的“确认”按钮');
-    } else {
-        console.warn(' -> 未找到确认按钮，可能是自动确认模式？');
     }
 }
 
@@ -415,10 +415,9 @@ async function selectDateRange(page, dateStrStart, dateStrEnd) {
 
 async function pddOrderDownloadAndImportTask(page) {
     console.log(`\n--- 📦 [任务] 正在执行订单报表下载、导入及归档任务 (回溯 ${ORDER_CHECK_PAST_DAYS} 天) ---`);
-    // 1. 初始化本地文件
+    
     await initialOrderImportAndArchive();
     
-    // 2. 数据库查漏
     const datesToDownloadSet = await getMissingDatesFromDatabase(ORDER_CHECK_PAST_DAYS);
     const sortedDatesToDownload = Array.from(datesToDownloadSet).sort();
     
@@ -427,7 +426,6 @@ async function pddOrderDownloadAndImportTask(page) {
         return;
     }
 
-    // 3. 分组
     const dateRangesToDownload = groupConsecutiveDates(sortedDatesToDownload);
     console.log(`\n发现 ${sortedDatesToDownload.length} 个缺失日期，分为 ${dateRangesToDownload.length} 组。`);
     let downloadCounter = 0;
@@ -439,57 +437,28 @@ async function pddOrderDownloadAndImportTask(page) {
             console.log(`\n[处理中] 范围: ${dateStrStart} 至 ${dateStrEnd}`);
             await page.goto(ORDER_LIST_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
             
-            // 弹窗处理
+            // 尝试关闭可能的弹窗
             try {
-                const closeButton = page.getByRole('button', { name: '我知道了' }).or(page.locator('[aria-label*="关闭"]')).first();
-                if (await closeButton.isVisible({ timeout: 3000 })) {
-                    await closeButton.click();
-                }
+                const closeIcon = page.locator('[data-testid="beast-core-modal-icon-close"]');
+                if (await closeIcon.isVisible({ timeout: 5000 })) {
+                    await closeIcon.click();
+                    await randomDelay(500, 1000);
+                } 
             } catch (e) {}
 
             await randomDelay(HUMAN_LIKE_DELAY_MIN_MS, HUMAN_LIKE_DELAY_MAX_MS);
             
-            // ================= [修复点 1：精准点击“全部订单”] =================
-            console.log(' -> 正在尝试切换到“全部”订单状态...');
-            try {
-                // 1. 尝试找到 Tab Label，文本包含“全部订单”
-                // 使用 filter hasText 可以匹配 "全部订单(近3个月)" 这种文本
-                const allTabLabel = page.locator('[data-testid="beast-core-tab-itemLabel"]').filter({ hasText: '全部订单' }).first();
-                
-                // 2. 如果找不到，尝试更广泛的文本匹配
-                const allTabGeneric = page.getByText('全部订单').first();
-
-                if (await allTabLabel.isVisible({ timeout: 3000 })) {
-                    await allTabLabel.click();
-                    console.log(' -> ✅ 已点击“全部订单”Tab (精准匹配)。');
-                } else if (await allTabGeneric.isVisible({ timeout: 2000 })) {
-                    await allTabGeneric.click();
-                    console.log(' -> ✅ 已点击“全部订单” (模糊匹配)。');
-                } else {
-                     console.warn(' -> ⚠️ 未找到“全部订单”相关按钮，可能页面结构已变或默认已在全部页。');
-                }
-            } catch (e) {
-                console.warn(` -> ⚠️ 切换“全部”状态时遇到轻微错误: ${e.message} (不影响后续流程)`);
-            }
-            await randomDelay(1000, 1500);
-            // =====================================================================
-
-            // 打开日期选择器
+            // --- 日期选择逻辑保持不变 ---
             const dateInput = page.locator('input[data-testid="beast-core-rangePicker-htmlInput"]');
             const datePickerPortal = page.locator('[data-testid="beast-core-portal"]');
             let isPickerOpen = await datePickerPortal.isVisible();
             let retryCount = 0;
 
             while (!isPickerOpen && retryCount < 3) {
-                if (retryCount > 0) {
-                    console.log(`   -> ⚠️ 日历弹窗未出现，正在重试点击 (${retryCount}/3)...`);
-                }
-                
                 await dateInput.click({ force: true });
                 try {
                     await datePickerPortal.waitFor({ state: 'visible', timeout: 3000 });
                     isPickerOpen = true;
-                    console.log(' -> ✅ 日期选择器已成功打开。');
                 } catch (e) {
                     retryCount++;
                     await randomDelay(1000, 2000);
@@ -501,23 +470,18 @@ async function pddOrderDownloadAndImportTask(page) {
             }
             
             await randomDelay(500, 1000);
-
-            // 点击“归零”
-            // 注意：点击归零可能会关闭弹窗，所以这里不依赖它，或者点完检查弹窗
+            
             const resetLink = page.getByText('归零').first();
             if (await resetLink.isVisible()) {
-                // console.log(' -> 尝试点击“归零”...');
-                // await resetLink.click();
-                // await randomDelay(300, 500);
-                // 某些版本点击归零后弹窗会刷新或关闭，稳妥起见，这里先跳过归零
-                // 因为后续选择日期会覆盖旧值，不点归零通常也安全。
-                // 如果必须点，需要在此处重新检查 isPickerOpen
-                // 为了稳定性，本次修复暂不点“归零”，直接选日期
+                await resetLink.click();
+                await randomDelay(700, 1000);
+                if (!await datePickerPortal.isVisible()) {
+                    await dateInput.click({ force: true });
+                    await datePickerPortal.waitFor({ state: 'visible', timeout: 5000 });
+                }
             }
             
-            // 选择日期 (selectDateRange 内部现在会自动重开弹窗)
             await selectDateRange(page, dateStrStart, dateStrEnd);
-
             await randomDelay(SHORT_DELAY_MIN_MS, SHORT_DELAY_MAX_MS);
             
             // 点击查询
@@ -535,37 +499,112 @@ async function pddOrderDownloadAndImportTask(page) {
             // 点击生成报表
             const generateReportButton = page.getByRole('button', { name: '生成报表' });
             await generateReportButton.click();
-            console.log(' -> 已生成报表，正在等待“下载报表”按钮出现...');
+            console.log(' -> 已生成报表，进入下载检测循环 (适配测试脚本逻辑 V2)...');
             
-            // ================= [下载逻辑] =================
-            // 显式等待足够长的时间，让报表生成（PDD有时需要10-20秒）
-            await page.waitForTimeout(10000); 
+            // 给服务器一点反应时间，避免立即检测为空
+            await page.waitForTimeout(2000);
 
-            // 定义下载按钮定位器 (匹配 <button><span>下载报表</span></button>)
-            const downloadBtnLocator = page.locator('button').filter({ hasText: '下载报表' }).first();
-
-            try {
-                // 等待按钮出现 (最长60秒)
-                await downloadBtnLocator.waitFor({ state: 'visible', timeout: 60000 });
-                console.log(' -> ✅ “下载报表”按钮已出现，准备点击...');
-
-                // 使用 Promise.all 防止点击后 crash
-                const [download] = await Promise.all([
-                    page.waitForEvent('download', { timeout: 120000 }), // 等待浏览器触发下载事件
-                    downloadBtnLocator.click() // 点击按钮
-                ]);
-
-                const suggestedFilename = download.suggestedFilename();
-                filePath = path.join(ORDER_DOWNLOAD_FOLDER, suggestedFilename);
-                await download.saveAs(filePath);
+            let isDownloadTriggered = false;
+            
+            // --- [修改重点] 采用测试脚本的检测逻辑 ---
+            // 最多重试 30 次 (约 2-3 分钟)
+            for (let i = 0; i < 30; i++) {
                 
-                console.log(`✅ [下载成功] ${filePath}`);
-                downloadCounter++;
-            } catch (dlError) {
-                throw new Error(`下载阶段失败 (按钮未出现或点击无效): ${dlError.message}`);
-            }
-            // =============================================================
+                // 1. 定位列表第一项 (Download Box)
+                // 每次循环重新定位，防止 DOM 刷新导致元素失效
+                const firstCard = page.locator('div.download-box').first();
+                
+                // 检查列表是否已加载
+                if (await firstCard.count() === 0) {
+                     console.log(` -> [${i+1}/30] ⏳ 列表容器未加载，点击刷新...`);
+                     const globalRefresh = page.getByText('刷新').last();
+                     if (await globalRefresh.isVisible()) await globalRefresh.click({ force: true });
+                     await page.waitForTimeout(3000);
+                     continue;
+                }
 
+                // 2. 在卡片内寻找包含“下载报表”文字的按钮 (精确匹配测试脚本逻辑)
+                const targetBtn = firstCard.locator('button').filter({ hasText: '下载报表' });
+                
+                // 3. 主动检查按钮是否可见 (不使用 try/catch 等待，而是直接判断 count)
+                const isBtnVisible = await targetBtn.count() > 0;
+
+                if (isBtnVisible) {
+                    console.log(` -> [${i+1}/30] 🎯 成功发现“下载报表”按钮！`);
+
+                    // [高亮视觉反馈] - 移植自测试脚本，确认为正确元素
+                    await targetBtn.evaluate(node => {
+                        node.style.border = '5px solid red';
+                        node.style.backgroundColor = 'yellow';
+                    });
+                    
+                    // 确保元素在视图内
+                    await targetBtn.scrollIntoViewIfNeeded();
+                    await page.waitForTimeout(1000); // 稍作停顿，避免操作过快
+
+                    try {
+                        // 设置下载监听 (超时设置为 30秒)
+                        console.log(' -> 🖱️ 正在执行点击操作 (强制模式)...');
+                        const downloadPromise = page.waitForEvent('download', { timeout: 30000 });
+                        
+                        // 使用 force: true 绕过可能的透明遮挡
+                        await targetBtn.click({ force: true });
+
+                        const download = await downloadPromise;
+                        const suggestedFilename = download.suggestedFilename();
+                        console.log(`   ✅ 捕获到下载事件: ${suggestedFilename}`);
+                        
+                        // 保存文件
+                        filePath = path.join(ORDER_DOWNLOAD_FOLDER, suggestedFilename);
+                        await download.saveAs(filePath);
+                        console.log(`   ✅ 文件已保存: ${filePath}`);
+                        
+                        isDownloadTriggered = true;
+                        downloadCounter++;
+                        break; // 下载成功，跳出循环
+
+                    } catch (err) {
+                        console.error(`   ❌ 点击了按钮但下载失败/超时: ${err.message}`);
+                        // 如果点击失败，可能是假死，尝试刷新后继续循环
+                    }
+
+                } else {
+                    // 4. 如果没有找到按钮，诊断原因并刷新
+                    // 获取卡片文本判断状态
+                    const cardText = await firstCard.innerText().catch(() => '');
+                    const cleanText = cardText.replace(/\s+/g, ' ').substring(0, 50);
+                    
+                    console.log(` -> [${i+1}/30] ⚠️ 未找到下载按钮。卡片状态: [${cleanText}...]`);
+
+                    if (cardText.includes('生成中')) {
+                        console.log('    -> 状态判定：[生成中]，等待 5 秒...');
+                        await page.waitForTimeout(5000);
+                    } else if (cardText.includes('失败')) {
+                        console.log('    -> 状态判定：[生成失败]，尝试重新点击生成或刷新...');
+                        // 如果失败了，可能需要退出重试，或者这里简单处理为刷新
+                    } else {
+                        console.log('    -> 状态判定：未知/已过期，尝试刷新...');
+                    }
+
+                    // 核心动作：点击刷新以更新列表状态
+                    // 寻找页面右上部分可能存在的刷新按钮
+                    const refreshBtn = page.getByText('刷新').last();
+                    if (await refreshBtn.isVisible()) {
+                        console.log('    -> 🔄 点击刷新按钮...');
+                        await refreshBtn.click({ force: true });
+                        await page.waitForTimeout(3000); // 给刷新留足时间
+                    } else {
+                        await page.waitForTimeout(2000);
+                    }
+                }
+            }
+            // --- [循环结束] ---
+
+            if (!isDownloadTriggered) {
+                 throw new Error('❌ 超时：30次尝试后仍未下载成功 (请检查控制台输出的卡片文本状态)');
+            }
+
+            // 批次休息逻辑
             if (downloadCounter > 0 && downloadCounter % DOWNLOADS_PER_BATCH === 0) {
                 console.log(`\n--- 休息中... ---`);
                 await randomDelay(LONG_DELAY_MIN_MS, LONG_DELAY_MAX_MS);
@@ -586,17 +625,15 @@ async function pddOrderDownloadAndImportTask(page) {
 
 // ======================= [入口函数] =======================
 async function main() {
-    console.log(`\n--- 🚀 [Order Only] 启动拼多多订单报表下载任务 ---`);
+    console.log(`\n--- 🚀 [Order Only] 启动拼多多订单报表下载任务 (V19) ---`);
 
     let context;
     let page;
     try {
-        console.log(`\n--- [启动浏览器] 正在从 \`${userDataDir}\` 加载用户配置... ---`);
         try { 
             await fs.access(userDataDir);
         } catch { 
             console.error(`❌ 错误：用户配置文件夹 \`${userDataDir}\` 不存在！`); 
-            console.error('请先成功运行一次登录配置或检查路径。');
             return; 
         }
         
@@ -609,9 +646,7 @@ async function main() {
             downloadsPath: ORDER_DOWNLOAD_FOLDER 
         });
         page = context.pages().length ? context.pages()[0] : await context.newPage();
-        console.log('✅ 用户配置加载成功！会话已恢复。');
-
-        // 执行订单报表任务
+        
         await pddOrderDownloadAndImportTask(page);
 
     } catch (error) {
@@ -619,10 +654,9 @@ async function main() {
     } finally {
         if (context) {
             await context.close();
-            console.log('\n🔚 浏览器已关闭，订单报表任务执行结束。');
+            console.log('\n🔚 浏览器已关闭。');
         }
     }
-    console.log('\n🎉 订单报表任务执行完毕！');
 }
 
 main();
