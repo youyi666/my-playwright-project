@@ -1,9 +1,10 @@
 // PDD_Order_Full_Task_Final.js - 拼多多订单报表全自动下载入库脚本
-// [2026-01-27 V35 鲁棒增强版] 
-// 核心升级：
-// 1. 增加任务级重试机制 (应对首屏弹窗干扰，失败自动重试一次)
-// 2. 增加导出频率限制检测 (如果遇到5分钟限制，自动倒计时等待并重试)
-// 3. 保留 V34 所有已验证的日期选择与数据库修复逻辑
+// [2026-01-29 V39 终极全能版]
+// 核心修复：
+// 1. 弹窗干扰 -> 任务级自动重试 (maxAttempts=2)
+// 2. 归零失败 -> 引入 ensureCalendarOpen + 显式等待 + 状态二次确认
+// 3. 频率限制 -> 增强型 Toast 捕获 + 倒计时冷却
+// 4. 数据脏读 -> 数据库查漏改为解析“订单号”推算日期
 
 const { chromium } = require('playwright');
 const fs = require('fs/promises');
@@ -51,7 +52,6 @@ function addOneDay(dateStr) {
     return formatDate(date);
 }
 
-// 倒计时工具函数
 async function countdown(seconds, message) {
     for (let i = seconds; i > 0; i--) {
         process.stdout.write(`\r -> ⏳ ${message}: 还需等待 ${i} 秒...   `);
@@ -76,22 +76,37 @@ function formatPaymentDate(dateTimeStr) {
     return null;
 }
 
+// [核心修复4] 从订单号前缀提取日期 (YYMMDD -> YYYY-MM-DD)
+// 用于解决数据库查漏时的跨天支付脏数据问题
+function getDateFromOrderId(orderId) {
+    if (!orderId || String(orderId).length < 6) return null;
+    const orderStr = String(orderId).trim();
+    const prefix = orderStr.substring(0, 6); 
+    
+    // 简单校验是否为数字
+    if (!/^\d+$/.test(prefix)) return null;
+
+    const year = '20' + prefix.substring(0, 2);
+    const month = prefix.substring(2, 4);
+    const day = prefix.substring(4, 6);
+    return `${year}-${month}-${day}`;
+}
+
 // ======================= [UI 交互逻辑] =======================
 
-// 增强弹窗关闭逻辑
+// [核心修复1] 弹窗清理逻辑
 async function tryClosePopups(page) {
     try {
-        // 常见的弹窗关闭按钮选择器
         const closeSelectors = [
             '[data-testid="beast-core-modal-icon-close"]',
             '.beast-core-modal-close',
             'button[aria-label="Close"]',
-            // 有时候会有全屏遮罩的“知道了”按钮
             'button:has-text("知道了")',
-            'button:has-text("关闭")'
+            'button:has-text("关闭")',
+            '.u-icon-close' // 补充常见的关闭图标类名
         ];
-
         for (const selector of closeSelectors) {
+            // 只检测可见的
             const btn = page.locator(selector).first();
             if (await btn.isVisible({ timeout: 500 })) {
                 console.log(` -> 🛡️ 检测到干扰弹窗，尝试关闭...`);
@@ -99,108 +114,127 @@ async function tryClosePopups(page) {
                 await page.waitForTimeout(500);
             }
         }
-    } catch (e) {
-        // 忽略弹窗处理错误
+    } catch (e) {}
+}
+
+// [核心修复2] 强力开门函数：解决“点击日期输入框被吞”的问题
+async function ensureCalendarOpen(page) {
+    const calendarContainer = page.locator('[data-testid="beast-core-portal"]');
+    const dateInput = page.locator('input[data-testid="beast-core-rangePicker-htmlInput"]');
+
+    // 如果已经开了，直接返回
+    if (await calendarContainer.isVisible()) return;
+
+    // 最多重试 3 次，间隔递增
+    for (let i = 1; i <= 3; i++) {
+        try {
+            await dateInput.click({ force: true }); 
+            // 等待弹窗出现
+            await calendarContainer.waitFor({ state: 'visible', timeout: 2000 });
+            return;
+        } catch (e) {
+            console.warn(`   -> ⚠️ 点击被吞 (尝试 ${i}/3)，重试中...`);
+            await page.waitForTimeout(1000); // 冷却一下
+        }
     }
+    throw new Error("UI死锁：尝试 3 次均无法打开日历面板");
 }
 
 async function performReset(page) {
     const calendarContainer = page.locator('[data-testid="beast-core-portal"]');
-    const dateInput = page.locator('input[data-testid="beast-core-rangePicker-htmlInput"]');
     
-    // 1. 打开日历
-    if (!await calendarContainer.isVisible()) {
-        await dateInput.click({ force: true });
-        try { await calendarContainer.waitFor({ state: 'visible', timeout: 3000 }); } catch (e) {}
-    }
+    // 1. 确保日历打开
+    await ensureCalendarOpen(page);
 
-    // 2. 检查是否有“归零”
-    let resetLink = calendarContainer.locator('text=归零').or(calendarContainer.locator('a, span').filter({ hasText: '归零' })).first(); 
+    // 寻找归零按钮
+    let resetLink = calendarContainer.locator('text=归零').or(calendarContainer.locator('a, span').filter({ hasText: '归零' })).first();
     
-    // 3. 【关键逻辑】如果没找到归零按钮，说明输入框是空的
-    // 我们先随便点一个日期（比如“今天”或者列表里的第一个数字），强行让“归零”出现
+    // 2. 激活逻辑：如果没看到归零，先点个有效日期激活它
     if (!await resetLink.isVisible()) {
-        console.log(' -> ℹ️ 未发现归零按钮(可能为空)，正在尝试点击任意日期以激活...');
         try {
-            // 随便点一个可见的 td
-            const anyDate = calendarContainer.locator('td:not(.disabled)').first();
+            const anyDate = calendarContainer.locator('td:not(.disabled):not(.prev-month):not(.next-month)').first();
             if (await anyDate.count() > 0) {
                 await anyDate.click({ force: true });
                 await page.waitForTimeout(500); 
-                // 点完日期后，日历可能会关，或者“归零”会出现。
-                // 如果日历关了，重新点开
-                if (!await calendarContainer.isVisible()) {
-                    await dateInput.click({ force: true });
-                    await calendarContainer.waitFor({ state: 'visible', timeout: 3000 });
-                }
+                // 点击日期后日历可能关闭，必须重新强力打开
+                await ensureCalendarOpen(page);
             }
-        } catch (e) {
-            console.log(' -> 激活点击失败，跳过...');
-        }
+        } catch (e) {}
     }
 
-    // 4. 再次寻找并点击归零
+    // 3. 执行归零
     if (await resetLink.isVisible()) {
-        console.log(' -> 🎯 发现归零按钮，执行清除...');
+        console.log(' -> 🎯 执行归零...');
         await resetLink.evaluate(el => el.click()); 
+        
+        // [核心修复2] 归零后显式等待动画
         await page.waitForTimeout(1000); 
-
-        // 5. 归零后确保日历是打开状态（因为后面要选正确日期）
-        if (!await calendarContainer.isVisible()) {
-            console.log(' -> 归零后日历关闭，重新打开...');
-            await dateInput.click({ force: true });
-            await calendarContainer.waitFor({ state: 'visible', timeout: 5000 });
-        }
-    } else {
-        console.log(' -> ⚠️ 尝试激活后仍未发现归零按钮，假定已是干净状态。');
+        
+        // 归零后日历可能自动关闭，再次强力打开，为后续选日期做准备
+        await ensureCalendarOpen(page);
     }
 }
 
 async function selectDateRange(page, dateStrStart, dateStrEnd) {
+    // 结束日期+1天逻辑
     const uiDateStrEnd = addOneDay(dateStrEnd);
     const dayStart = parseInt(dateStrStart.split('-')[2], 10).toString();
     const dayEnd = parseInt(uiDateStrEnd.split('-')[2], 10).toString();
 
     console.log(` -> [日期选择] 逻辑范围: ${dateStrStart}至${dateStrEnd} | UI操作: ${dayStart}号 和 ${dayEnd}号`);
 
+    // 1. 确保日历打开
+    await ensureCalendarOpen(page);
     const calendarContainer = page.locator('[data-testid="beast-core-portal"]');
-    
-    if (!await calendarContainer.isVisible()) {
-        await page.locator('input[data-testid="beast-core-rangePicker-htmlInput"]').click({ force: true });
-        await calendarContainer.waitFor({ state: 'visible', timeout: 3000 });
-    }
 
-    const clickSmart = async (targetDay, type) => {
+    // 智能点击函数
+    const clickSmart = async (targetDay) => {
         const regex = new RegExp(`^\\s*${targetDay}\\s*$`);
+        // 过滤文本匹配的td
         const candidates = calendarContainer.locator('td').filter({ hasText: regex });
         const count = await candidates.count();
 
         let clickSuccess = false;
-        for (let i = 0; i < count; i++) {
+        
+        // [核心修复2] 优先遍历有效日期 (排除灰显、上月、下月)
+        // 倒序遍历（从后往前），通常能选到当前月份的日期
+        for (let i = count - 1; i >= 0; i--) {
             const el = candidates.nth(i);
             if (!await el.isVisible()) continue;
             
             const className = await el.getAttribute('class') || '';
             const textContent = await el.innerText();
+            
+            // 精确匹配数字
             if (textContent.trim() !== targetDay) continue;
-            if (className.includes('disabled') || className.includes('prev-month') || className.includes('next-month') || className.includes('gray')) continue;
+            
+            // 排除无效日期
+            if (className.includes('disabled') || 
+                className.includes('prev-month') || 
+                className.includes('next-month') || 
+                className.includes('gray')) {
+                continue;
+            }
 
             try {
                 await el.click({ timeout: 1000, force: true });
                 clickSuccess = true;
-                await page.waitForTimeout(300); 
+                await page.waitForTimeout(300); // 动作间隔
                 break; 
             } catch (e) {}
         }
-        if (!clickSuccess) {
-            try { await candidates.last().click({ timeout: 2000, force: true }); } 
-            catch (e) { throw new Error(`无法点击: ${targetDay}`); }
+
+        // 兜底：如果上面没点到，盲点最后一个候选（通常是本月）
+        if (!clickSuccess && count > 0) {
+            try { 
+                await candidates.last().click({ timeout: 2000, force: true }); 
+            } catch (e) { throw new Error(`无法点击日期: ${targetDay}`); }
         }
     };
 
-    await clickSmart(dayStart, "起始日期");
-    await randomDelay(600, 1000); 
-    await clickSmart(dayEnd, "结束日期");
+    await clickSmart(dayStart);
+    await randomDelay(600, 1000);
+    await clickSmart(dayEnd);
     await randomDelay(500, 800);
 
     const confirmBtn = calendarContainer.locator('button').filter({ hasText: /^确认$/ })
@@ -213,9 +247,7 @@ async function selectDateRange(page, dateStrStart, dateStrEnd) {
 let globalDb = null;
 function getDbConnection() {
     if (!globalDb) {
-        console.log(`\n🛠️ [数据库连接] 路径: ${path.resolve(CENTRAL_DB_PATH)}`);
         try {
-            fs.mkdir(path.dirname(CENTRAL_DB_PATH), { recursive: true }).catch(()=>{});
             globalDb = new Database(CENTRAL_DB_PATH);
             globalDb.pragma('journal_mode = WAL'); 
         } catch (e) {
@@ -231,9 +263,8 @@ async function importFileWithSupport(filePath) {
     try {
         let finalExcelPath = filePath;
         let isTempFile = false;
-
+        // 处理 ZIP
         if (filePath.toLowerCase().endsWith('.zip')) {
-            console.log(` -> 📦 解压 ZIP...`);
             const zip = new AdmZip(filePath);
             const entry = zip.getEntries().find(e => e.entryName.endsWith('.xlsx') || e.entryName.endsWith('.csv'));
             if (!entry) throw new Error("ZIP 无效");
@@ -249,14 +280,12 @@ async function importFileWithSupport(filePath) {
         
         if (rawData.length > 0) {
             const beforeCount = db.prepare(`SELECT count(*) as c FROM "${DB_ORDER_TABLE_NAME}"`).get()?.c || 0;
-            const opsCount = processOrderDataForDatabase(rawData, path.basename(filePath), db);
+            processOrderDataForDatabase(rawData, path.basename(filePath), db);
             const afterCount = db.prepare(`SELECT count(*) as c FROM "${DB_ORDER_TABLE_NAME}"`).get()?.c || 0;
-            const realAdded = afterCount - beforeCount;
-
-            console.log(` ✅ 入库处理完成: 有效数据 ${opsCount} 条。`);
-            console.log(`    📊 [统计] 库内总数: ${beforeCount} -> ${afterCount} (实际新增: ${realAdded} 条)`);
+            console.log(` ✅ 入库处理完成。📊 库内总数: ${beforeCount} -> ${afterCount}`);
         }
         
+        // 归档
         await fs.mkdir(ORDER_ARCHIVE_FOLDER, { recursive: true });
         await fs.rename(filePath, path.join(ORDER_ARCHIVE_FOLDER, path.basename(filePath)));
         if (isTempFile) await fs.rm(path.dirname(finalExcelPath), { recursive: true, force: true });
@@ -271,13 +300,11 @@ function processOrderDataForDatabase(rawData, fileName, db) {
         for (const k in row) obj[String(k).trim()] = row[k];
         return obj;
     });
-    
     const rows = cleaned.map(row => {
         const nr = { ...row };
         nr[ORDER_PAYMENT_DATE_HEADER] = formatPaymentDate(row['支付时间']);
         return nr[ORDER_PRIMARY_KEY] && nr[ORDER_PAYMENT_DATE_HEADER] ? nr : null;
     }).filter(r => r);
-
     if (rows.length === 0) return 0;
     
     const first = rows[0]; 
@@ -290,10 +317,8 @@ function processOrderDataForDatabase(rawData, fileName, db) {
         const exist = db.prepare(`PRAGMA table_info("${DB_ORDER_TABLE_NAME}")`).all().map(c => c.name);
         cols.forEach(c => { if(!exist.includes(c)) db.prepare(`ALTER TABLE "${DB_ORDER_TABLE_NAME}" ADD COLUMN "${c}" TEXT`).run(); });
     })();
-
     const finalCols = db.prepare(`PRAGMA table_info("${DB_ORDER_TABLE_NAME}")`).all().map(c => c.name);
     const stmt = db.prepare(`INSERT INTO "${DB_ORDER_TABLE_NAME}" (${finalCols.map(c=>`"${c}"`).join(',')}) VALUES (${finalCols.map(c=>`@${c}`).join(',')}) ON CONFLICT("${pk}") DO UPDATE SET ${finalCols.filter(c=>c!==pk).map(c=>`"${c}"=excluded."${c}"`).join(',')}`);
-
     let cnt = 0;
     db.transaction(() => {
         for (const r of rows) {
@@ -310,22 +335,39 @@ function processOrderDataForDatabase(rawData, fileName, db) {
 
 // ======================= [日期查漏] =======================
 
+// [核心修复4] 基于订单号的查漏逻辑
 async function getMissingDatesFromDatabase(daysAgo) {
     const db = getDbConnection();
     const needed = new Set();
     const today = new Date();
+    // 生成最近 N 天的日期列表
     for(let i=1; i<=daysAgo; i++) {
-        const d = new Date(); d.setDate(today.getDate()-i);
+        const d = new Date();
+        d.setDate(today.getDate()-i);
         needed.add(formatDate(d));
     }
+
     try {
-        const col = ORDER_PAYMENT_DATE_HEADER.replace(/[\s\.\-\/\\()]/g, '_');
         const check = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(DB_ORDER_TABLE_NAME);
         if(!check) return needed;
-        const rows = db.prepare(`SELECT DISTINCT "${col}" FROM "${DB_ORDER_TABLE_NAME}" WHERE "${col}" >= ?`).all(formatDate(new Date(today.setDate(today.getDate()-daysAgo))));
-        const exist = new Set(rows.map(r=>r[col]));
-        return new Set([...needed].filter(d=>!exist.has(d)));
-    } catch(e) { return needed; }
+
+        // 只查订单号列，效率更高
+        const rows = db.prepare(`SELECT "${ORDER_PRIMARY_KEY}" FROM "${DB_ORDER_TABLE_NAME}"`).all();
+        
+        const exist = new Set();
+        rows.forEach(r => {
+            const orderId = r[ORDER_PRIMARY_KEY];
+            // 核心：解析订单号得到日期
+            const dateStr = getDateFromOrderId(orderId);
+            if (dateStr) exist.add(dateStr);
+        });
+
+        // 差集运算
+        return new Set([...needed].filter(d => !exist.has(d)));
+    } catch(e) { 
+        console.error(` -> 📅 日期查漏异常: ${e.message}`);
+        return needed; 
+    }
 }
 
 function groupConsecutiveDates(set) {
@@ -334,7 +376,8 @@ function groupConsecutiveDates(set) {
     const ranges = [];
     let start = arr[0], end = arr[0];
     for(let i=1; i<arr.length; i++) {
-        const next = new Date(end); next.setDate(next.getDate()+1);
+        const next = new Date(end);
+        next.setDate(next.getDate()+1);
         if(formatDate(next) === arr[i]) end = arr[i];
         else { ranges.push({start, end}); start = arr[i]; end = arr[i]; }
     }
@@ -342,7 +385,7 @@ function groupConsecutiveDates(set) {
     return ranges;
 }
 
-// ======================= [主流程 (V35 重构)] =======================
+// ======================= [主流程] =======================
 
 async function pddOrderTask(page) {
     console.log(`\n--- 📦 [任务] 启动报表同步 (回溯 ${ORDER_CHECK_PAST_DAYS} 天) ---`);
@@ -352,10 +395,10 @@ async function pddOrderTask(page) {
     const ranges = groupConsecutiveDates(missing);
     console.log(` -> 缺失 ${missing.size} 天，分 ${ranges.length} 批。`);
 
-    // ----------------- V35: 任务级重试循环 -----------------
+    // 遍历每一个缺失的时间段
     for (const range of ranges) {
         let attempt = 0;
-        const maxAttempts = 2; // 允许失败重试一次
+        const maxAttempts = 2; // [核心修复1] 任务级重试
 
         while (attempt < maxAttempts) {
             attempt++;
@@ -363,88 +406,99 @@ async function pddOrderTask(page) {
                 console.log(`\n[执行] 正在处理: ${range.start} 至 ${range.end} (第 ${attempt} 次尝试)`);
                 
                 await page.goto(ORDER_LIST_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
-                // V35: 主动尝试清理首屏弹窗
+                // [核心修复1] 主动清理首屏弹窗
                 await tryClosePopups(page);
-                await randomDelay(HUMAN_LIKE_DELAY_MIN_MS, HUMAN_LIKE_DELAY_MAX_MS);
-
-                // 1. 归零 & 选日期
+                
+                // [核心修复2] 归零与日期选择
                 await performReset(page);
                 await selectDateRange(page, range.start, range.end);
                 
-                // 2. 导出申请流程
-                await randomDelay(SHORT_DELAY_MIN_MS, SHORT_DELAY_MAX_MS);
                 await page.getByRole('button', { name: '查询', exact: true }).click();
                 await page.waitForTimeout(3000);
                 await page.getByRole('button', { name: '批量导出' }).click();
                 await page.waitForTimeout(2000);
                 await page.getByRole('button', { name: '生成报表' }).click();
 
-                // ----------------- V35: 5分钟频率限制检测 -----------------
-                // 点击生成后，立即检测是否有报错提示
-                // 常见提示: "操作过于频繁", "两次导出需间隔", "请稍后"
-                try {
-                    const errorToast = page.locator('.ant-message-notice, .beast-core-modal-content').filter({ 
-                        hasText: /频繁|间隔|稍后|导出中/ 
-                    }).first();
-                    
-                    if (await errorToast.isVisible({ timeout: 4000 })) {
-                        const errorText = await errorToast.innerText();
-                        console.log(`\n🚨 检测到频率限制警告: [${errorText}]`);
-                        console.log(` -> 🛑 触发保护机制，进入 5 分钟冷却倒计时...`);
-                        
-                        // 倒计时 310 秒 (5分10秒)
-                        await countdown(310, "频率冷却中");
-                        
-                        console.log(` -> ♻️ 冷却结束，重新尝试当前任务...`);
-                        throw new Error("Frequency limit triggered - retrying after wait"); // 抛出错误以触发重试
-                    }
-                } catch (e) {
-                    if (e.message.includes("Frequency")) throw e; // 向上抛出以触发 while 循环重试
-                    // 没检测到错误，说明正常，继续
+                // [核心修复3] 增强型频率限制检测
+                // 检测是否有 Toast 或 Modal 提示“频繁”
+                const errorToast = page.locator('.ant-message-notice, .beast-core-modal-content').filter({ 
+                     hasText: /频繁|间隔|稍后|导出中/ 
+                }).first();
+                
+                // 给它一点时间出现
+                if (await errorToast.isVisible({ timeout: 5000 })) {
+                    console.log(`\n🚨 触发频率限制保护！`);
+                    // 进入 5分10秒 冷却
+                    await countdown(310, "系统冷却中");
+                    // 抛出错误以触发 while 循环的 retry，重新执行当前 range
+                    throw new Error("Frequency limit triggered - cooling down");
                 }
-                // --------------------------------------------------------
 
                 await page.goto(EXPORT_RECORD_URL, { waitUntil: 'domcontentloaded' });
                 
+                // ----------------------------------------------------
+                // 下载逻辑：智能等待 + 遍历查找
+                // ----------------------------------------------------
                 let file = null;
-                for (let i = 0; i < 30; i++) {
-                    const box = page.locator('div.download-box').first();
-                    const btn = box.locator('button').filter({ hasText: '下载报表' });
+                console.log(' -> ⏳ 正在等待“下载报表”按钮出现...');
+                try {
+                    await page.waitForSelector('text=下载报表', { timeout: 10000 });
+                } catch (e) {
+                    console.warn(' -> ⚠️ 等待超时，尝试点击“刷新”...');
+                    const refreshBtn = page.getByText('刷新').or(page.getByText('查询')).first();
+                    if (await refreshBtn.isVisible()) {
+                        await refreshBtn.click();
+                        await page.waitForTimeout(3000);
+                    }
+                }
+
+                const allButtons = page.getByTestId('beast-core-button');
+                const btnCount = await allButtons.count();
+                console.log(` -> 扫描到 ${btnCount} 个功能按钮，搜寻“下载报表”...`);
+
+                let downloadSuccess = false;
+
+                // 遍历所有按钮，找到属于我们的那一个
+                for (let i = 0; i < btnCount; i++) {
+                    const btn = allButtons.nth(i);
+                    const text = await btn.innerText().catch(() => '');
                     
-                    if (await btn.count() > 0) {
-                        console.log(` -> [${i+1}/30] 🎯 点击下载...`);
-                        await btn.evaluate(n => n.style.border = '5px solid red');
+                    if (text.includes('下载报表')) {
+                        console.log(` -> 🎯 尝试点击第 ${i+1} 个按钮 (下载报表)...`);
                         try {
-                            const prom = page.waitForEvent('download', { timeout: 45000 });
+                            const downloadPromise = page.waitForEvent('download', { timeout: 15000 });
                             await btn.click({ force: true });
-                            const down = await prom;
+                            const down = await downloadPromise;
                             file = path.join(ORDER_DOWNLOAD_FOLDER, down.suggestedFilename());
                             await down.saveAs(file);
                             console.log(` ✅ 下载成功: ${path.basename(file)}`);
-                            break;
-                        } catch (e) { console.error(` ⚠️ 下载异常: ${e.message}`); }
-                    } else {
-                        const txt = await box.innerText().catch(()=>'');
-                        process.stdout.write(`\r -> [${i+1}/30] ⏳ ${txt.includes('生成中')?'生成中':'列表检查'}...`);
-                        const ref = page.getByText('刷新').last();
-                        if (await ref.isVisible()) await ref.click({ force: true });
-                        await page.waitForTimeout(5000);
+                            downloadSuccess = true;
+                            break; 
+                        } catch (e) {
+                            console.warn(`    ⚠️ 点击了但未下载 (可能是他人的报表/无权限)，尝试下一个...`);
+                        }
                     }
                 }
-                if (file) await importFileWithSupport(file);
-                await randomDelay(SHORT_DELAY_MIN_MS, SHORT_DELAY_MAX_MS);
 
-                // 成功完成，跳出重试循环，处理下一个 range
+                // 如果这一页都没下载成功，说明由于之前的频率限制导致报表根本没生成，
+                // 或者生成失败了。抛出错误，重试当前任务。
+                if (!downloadSuccess) {
+                    throw new Error("遍历所有按钮均未触发下载，可能报表未生成。");
+                }
+
+                if (file) await importFileWithSupport(file);
+                
+                // 成功完成，退出重试循环，处理下一个 range
                 break; 
 
             } catch (error) {
-                console.error(`\n❌ [尝试 ${attempt}/${maxAttempts} 失败] 原因: ${error.message}`);
+                console.error(`\n❌ 失败: ${error.message}`);
                 
-                if (attempt >= maxAttempts) {
-                    console.error(`   💀 达到最大重试次数，跳过此日期段: ${range.start}`);
+                if (attempt < maxAttempts) {
+                    console.log(' -> 🔄 准备刷新重试...');
+                    await page.waitForTimeout(3000);
                 } else {
-                    console.log(`   🔄 准备重新加载页面并重试...`);
-                    await page.waitForTimeout(3000); // 缓冲一下再刷新
+                    console.error(' -> 💀 达到最大重试次数，跳过此时间段。');
                 }
             }
         }
@@ -452,12 +506,9 @@ async function pddOrderTask(page) {
 }
 
 async function main() {
-    console.log(`\n--- 🚀 [PDD Full Task V35 鲁棒增强版] 启动 ---`);
     let context, page;
     try {
         await fs.mkdir(ORDER_DOWNLOAD_FOLDER, { recursive: true });
-        await fs.mkdir(path.dirname(CENTRAL_DB_PATH), { recursive: true }).catch(()=>{});
-
         context = await chromium.launchPersistentContext(userDataDir, { 
             headless: false, 
             args: ['--start-maximized', '--disable-blink-features=AutomationControlled'], 
@@ -469,11 +520,7 @@ async function main() {
     } catch (e) {
         console.error('\n❌ 错误:', e.message);
     } finally {
-        if (context) {
-            console.log('\n🔚 结束，关闭浏览器...');
-            if (page) await page.waitForTimeout(3000);
-            await context.close();
-        }
+        if (context) await context.close();
         if (globalDb) globalDb.close();
     }
 }
