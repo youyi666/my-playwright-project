@@ -257,7 +257,43 @@ function getDbConnection() {
     }
     return globalDb;
 }
+// [新增功能] 启动时扫描并导入本地遗留文件
+async function scanAndImportLocalFiles() {
+    console.log(`\n--- 📂 [初始化] 正在扫描本地未处理文件... ---`);
+    try {
+        // 检查文件夹是否存在
+        try {
+            await fs.access(ORDER_DOWNLOAD_FOLDER);
+        } catch {
+            console.log(" -> 📁 下载目录不存在，跳过扫描。");
+            return;
+        }
 
+        const files = await fs.readdir(ORDER_DOWNLOAD_FOLDER);
+        // 过滤出 .xlsx, .csv, .zip 且不包含 '已导入' 文件夹自身
+        const targetFiles = files.filter(f => {
+            const ext = path.extname(f).toLowerCase();
+            return (ext === '.xlsx' || ext === '.csv' || ext === '.zip') && !f.includes('Crdownload');
+        });
+
+        if (targetFiles.length === 0) {
+            console.log(" -> ⚪ 本地无待处理文件。");
+            return;
+        }
+
+        console.log(` -> 📦 发现 ${targetFiles.length} 个本地文件，开始导入...`);
+        
+        for (const file of targetFiles) {
+            const fullPath = path.join(ORDER_DOWNLOAD_FOLDER, file);
+            console.log(`    -> 处理本地文件: ${file}`);
+            await importFileWithSupport(fullPath); // 复用现有的入库函数 
+        }
+        console.log(" -> ✅ 本地文件清理完毕。\n");
+
+    } catch (e) {
+        console.error(` -> ⚠️ 扫描本地文件出错: ${e.message}`);
+    }
+}
 async function importFileWithSupport(filePath) {
     const db = getDbConnection();
     try {
@@ -388,8 +424,13 @@ function groupConsecutiveDates(set) {
 // ======================= [主流程] =======================
 
 async function pddOrderTask(page) {
+    // 1. 先把本地有的文件吃进去
+    await scanAndImportLocalFiles(); 
+
+    // 2. 吃完本地文件后，再去数据库算还需要查哪天
+    // 这样如果本地文件补全了数据，就不会重复去网页下载了
     console.log(`\n--- 📦 [任务] 启动报表同步 (回溯 ${ORDER_CHECK_PAST_DAYS} 天) ---`);
-    const missing = await getMissingDatesFromDatabase(ORDER_CHECK_PAST_DAYS);
+    const missing = await getMissingDatesFromDatabase(ORDER_CHECK_PAST_DAYS); // [cite: 86]
     if (!missing.size) return console.log("✅ 数据库最新。");
 
     const ranges = groupConsecutiveDates(missing);
