@@ -483,7 +483,7 @@ async function pddOrderTask(page) {
                 let file = null;
                 console.log(' -> ⏳ 正在等待“下载报表”按钮出现...');
                 try {
-                    await page.waitForSelector('text=下载报表', { timeout: 10000 });
+                    await page.waitForSelector('text=下载报表', { timeout: 100000 });
                 } catch (e) {
                     console.warn(' -> ⚠️ 等待超时，尝试点击“刷新”...');
                     const refreshBtn = page.getByText('刷新').or(page.getByText('查询')).first();
