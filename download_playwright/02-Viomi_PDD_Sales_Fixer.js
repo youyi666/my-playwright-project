@@ -1,4 +1,4 @@
-// viomi-download-script.js - 最终修正版 V9 (核心逻辑更新：自动适配 Excel 列变化，并从 pddorder 数据库表读取非退款数据，覆盖修正每日销售统计)
+// viomi-download-script.js - 最终修正版 V19 (修正查询页导航路径 + 过滤生产调试脏数据)
 //
 // 核心逻辑：
 // 1. 检查从2025-01-01到昨天的全部日期，与数据库中已有日期进行比对，找出所有缺失的日期。
@@ -6,43 +6,48 @@
 // 3. 执行“仅导入”和“下载并导入”的日常数据导入任务。
 //    【重要改动：在导入时，如果目标表不存在，将自动创建；如果表存在但缺少 Excel 中的列，将自动使用 ALTER TABLE 追加缺失的列。列类型设置为 '日期', '商品名称', '类目' 和 '账号' 字段为 TEXT，其他数字字段为 REAL (小数)。】
 // 4. 【新增安全覆盖流程】在所有导入完成后，读取指定的订单数据库表，按 [商品ID] + [日期] 汇总非“退款成功”的订单数据，询问用户确认后，精确覆盖数据库中的每日支付数据。
+// 5. 【新增：中央库存同步】在原有任务结束后，跳转至云米超级管理系统，通过模拟人工点击“中央库存”图标实现SSO免密跳转。
+// 6. 【V19 特性】
+//    - 修正导航：SSO跳转后，通过点击“库存管理”->“库存查询”进入界面，而非直接跳转URL。
+//    - 数据清洗：自动过滤掉“生产调试共享仓（请勿动）”的库存记录。
 
 import { chromium } from 'playwright';
 import path from 'path';
-import * as fs from 'fs'; // [改动 1.1] 修改：使用 * as fs 引入，确保能够访问 fs.promises
+import * as fs from 'fs'; 
 import Database from 'better-sqlite3';
 import xlsx from 'xlsx';
-// 🚀 新增：引入 readline 模块用于在命令行中询问用户
 import readline from 'readline'; 
-import { fileURLToPath } from 'url'; // [改动 1.2] 新增：ESM 兼容
+import { fileURLToPath } from 'url'; 
 
 // --------------------------- [ESM 兼容性修改 - 开始] ---------------------------
-// [改动 1.3] 定义 __filename 和 __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // --------------------------- [ESM 兼容性修改 - 结束] ---------------------------
 
+
+// 🚀 【新增功能配置区：平台开关】 (t = true, f = false)
+const ENABLE_PLATFORMS = {
+    '京东': true,   // t
+    '拼多多': true, // t
+    '天猫': true    // t
+};
 
 // --- 配置区域 ---
 const VIOMI_USERNAME = process.env.VIOMI_USERNAME;
 const VIOMI_PASSWORD = process.env.VIOMI_PASSWORD;
 
 // [改动 2.1: 下载目录 - 相对路径]
-// 原始: const DOWNLOAD_DIRECTORY = 'Z:\\sky.viomi.com.cn\\运营分析\\平台获取-商品销售流量\\拼多多';
 const DOWNLOAD_DIRECTORY = path.join(__dirname, 'exc_data', '平台获取-商品销售流量', '拼多多');
 
-// [改动 2.2: 目标 DB 路径 - 相对路径]
-// 原始: const DB_FILE = 'Z:\\天猫生意参谋\\TmallDataCenter.db'; // 目标表所在的数据库文件
-const DB_FILE = path.join(__dirname, 'sql_data', 'TmallDataCenter.db'); // 目标表所在的数据库文件
+// [改动 2.2: 目标 DB 路径 - 绝对路径]
+const DB_FILE = 'C:\\Users\\Administrator\\my-playwright-project\\download_playwright\\sql_data\\TmallDataCenter.db';
 const DB_TABLE_NAME = 'pinduoduo_sales_flow'; // 目标表名
 
 // [改动 4.1: 新增归档目录配置]
 const ARCHIVE_DIRECTORY = path.join(DOWNLOAD_DIRECTORY, '已导入');
 
 // 🚀 【订单数据源配置区域】用于非退款数据覆盖修正 -------------------------------------
-// [改动 2.3: 订单 DB 路径 - 相对路径]
-// 原始: const ORDER_DB_FILE = 'Z:\\天猫生意参谋\\TmallDataCenter.db'; // 订单数据库文件 (与 DB_FILE 相同)
-const ORDER_DB_FILE = path.join(__dirname, 'sql_data', 'TmallDataCenter.db'); // 订单数据库文件 (与 DB_FILE 相同)
+const ORDER_DB_FILE = DB_FILE; // 订单数据库文件 (与 DB_FILE 相同)
 const ORDER_DB_TABLE = 'pddorder'; // 订单表名 (您的新数据源)
 
 // 订单表 pddorder 中的列名 (请根据实际情况核对和修改!)
@@ -59,6 +64,10 @@ const DB_COL_REFUND_PAY_AMOUNT = '支付金额';        // 需覆盖为非退款
 const DB_COL_REFUND_PRODUCT_ID = '商品ID';          // 数据库中用于匹配的商品ID列名
 const DB_COL_DATE = '日期'; // <--- 关键：数据库中的日期列名
 // --------------------------------------------------------------------------------------
+
+// 🚀 【新增：中央库存任务配置】
+const TASKS_EXCEL_PATH = 'D:\\price_scraper\\tasks.xlsx';
+const INVENTORY_DB_TABLE = 'viomi_central_inventory';
 
 
 // --- 函数定义区域 ---
@@ -663,6 +672,209 @@ async function downloadReportForDate(page, reportDate) {
     }
 }
 
+// 🚀 【核心功能】中央库存同步 - 门户SSO跳转方案
+// 参数: context (用于捕获新窗口), page (当前的门户页面)
+async function syncCentralInventory(context, page) {
+    console.log('\n======================================================');
+    console.log('--- 启动中央库存查询任务 (门户SSO跳转模式) ---');
+    
+    // 1. 检查任务文件
+    if (!fs.existsSync(TASKS_EXCEL_PATH)) {
+        console.error(`❌ 任务文件不存在: ${TASKS_EXCEL_PATH}`);
+        return;
+    }
+
+    // 2. 读取 Excel 任务列表并筛选 69 码
+    const workbook = xlsx.readFile(TASKS_EXCEL_PATH);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = xlsx.utils.sheet_to_json(sheet);
+
+    // 获取启用的平台名称列表
+    const activePlatforms = Object.keys(ENABLE_PLATFORMS).filter(key => ENABLE_PLATFORMS[key]);
+    
+    if (activePlatforms.length === 0) {
+        console.log('ℹ️ 未启用任何平台，跳过库存查询。');
+        return;
+    }
+
+    console.log(`🔎 正在过滤以下平台的任务: [${activePlatforms.join(', ')}]`);
+
+    // 筛选 Platform 符合且 ProductID 有值的记录
+    const productCodes = rows
+        .filter(row => activePlatforms.includes(row['Platform']))
+        .map(row => String(row['ProductID']).trim())
+        .filter(code => code && code !== 'undefined');
+
+    // 去重
+    const uniqueCodes = [...new Set(productCodes)];
+
+    if (uniqueCodes.length === 0) {
+        console.log('ℹ️ 任务列表中未找到匹配选定平台的 69 码。');
+        return;
+    }
+
+    console.log(`🔎 准备查询 ${uniqueCodes.length} 个不重复的商品 69 码...`);
+
+    // 3. 访问云米超级管理系统 (门户)
+    console.log('➡️ 正在访问云米超级管理系统 (su.viomi.com.cn)...');
+    await page.goto('https://su.viomi.com.cn/super/#/home');
+    
+    // 智能登录: 如果跳转到了登录页，说明需要登录
+    if (page.url().includes('login') || page.url().includes('passport')) {
+        console.log('⚠️ 检测到需要登录门户，正在自动输入账号密码...');
+        // 尝试自动登录门户
+        try {
+            await page.waitForSelector('input[type="text"], input[placeholder*="账号"]', { timeout: 1000 });
+            const inputs = await page.locator('input:visible').all();
+            if (inputs.length >= 2) {
+                await inputs[0].fill(VIOMI_USERNAME);
+                await inputs[1].fill(VIOMI_PASSWORD);
+                await page.locator('button:has-text("登录"), div:has-text("登录")').last().click();
+                await page.waitForLoadState('networkidle');
+                console.log('✅ 已尝试自动登录门户。');
+            }
+        } catch (e) {
+            console.warn('⚠️ 自动登录门户遇到困难，可能已登录或选择器不匹配，继续尝试寻找入口...');
+        }
+    }
+    
+    // 4. 定位并点击“中央库存”图标 (这是SSO跳转的关键)
+    console.log('➡️ 正在查找“中央库存”入口图标...');
+    const inventoryBtn = page.locator('div.outer').filter({ hasText: '中央库存' });
+    
+    try {
+        await inventoryBtn.waitFor({ state: 'visible', timeout: 15000 });
+    } catch(e) {
+        console.error('❌ 未找到“中央库存”按钮。请确认账号是否有权限或是否已正确登录 su.viomi.com.cn。');
+        return;
+    }
+
+    console.log('🖱️ 点击“中央库存”按钮，等待SSO跳转...');
+    
+    // 点击并捕获新弹出的页面 (SSO Token 就在这个新页面的 URL 里)
+    const [newPage] = await Promise.all([
+        context.waitForEvent('page'),
+        inventoryBtn.click()
+    ]);
+    
+    await newPage.waitForLoadState('networkidle');
+    console.log('✅ 已成功跳转。检查是否为登录页...');
+
+    // 🚀 关键检测：如果跳转后URL仍包含 login，说明SSO失败，需要人工介入
+    if (newPage.url().includes('login') || newPage.url().includes('passport')) {
+        console.log('\n🔴 警告：检测到 SSO 跳转后仍停留在登录页！可能需要输入验证码或二次验证。');
+        console.log('👉 脚本已暂停。请在弹出的浏览器窗口中，手动完成登录操作（输入验证码等）。');
+        console.log('✅ 登录成功并进入【中央库存查询页】后，请回到这里按下回车键继续...');
+        
+        // 暂停脚本，等待用户按回车
+        await askQuestion('');
+        
+        console.log('▶️ 用户已确认登录成功，脚本恢复运行...');
+    } else {
+        console.log('✅ SSO 验证通过，直接进入系统！');
+    }
+    
+    // 🚀 【V19 核心修改】通过菜单点击进入查询页，确保侧边栏状态正确
+    console.log('➡️ 正在通过菜单导航至查询页...');
+    try {
+        // 点击 "库存管理"
+        await newPage.getByText('库存管理', { exact: true }).click();
+        // 点击 "库存查询"
+        await newPage.getByRole('menuitem', { name: '库存查询' }).click();
+        await newPage.waitForLoadState('networkidle');
+        console.log('✅ 已进入库存查询界面。');
+    } catch (e) {
+        console.warn('⚠️ 菜单导航失败，尝试直接 URL 跳转...');
+        if (!newPage.url().includes('warehouse/index.html')) {
+            await newPage.goto('https://su.viomi.com.cn/warehouse/index.html#/warehouse');
+            await newPage.waitForLoadState('networkidle');
+        }
+    }
+
+    // 5. 初始化库存数据库表
+    const db = new Database(DB_FILE);
+    const createTableSql = `
+        CREATE TABLE IF NOT EXISTS ${INVENTORY_DB_TABLE} (
+            查询日期 TEXT,
+            商品69码 TEXT,
+            仓库名称 TEXT,
+            可用库存 INTEGER,
+            占用库存 INTEGER,
+            冻结库存 INTEGER,
+            在途库存 INTEGER,
+            实物库存 INTEGER,
+            总库存 INTEGER,
+            PRIMARY KEY (查询日期, 商品69码, 仓库名称)
+        )
+    `;
+    // 尝试创建表。注意：如果表已存在且无主键，这行不会修改旧表结构。
+    // 建议您手动删除一次旧表 viomi_central_inventory
+    db.prepare(createTableSql).run();
+
+    const todayStr = getLocalDateString(new Date());
+    
+    // 使用 INSERT OR REPLACE 确保同一天、同一商品、同一仓库的数据会被覆盖更新，而不是新增
+    const insertStmt = db.prepare(`
+        INSERT OR REPLACE INTO ${INVENTORY_DB_TABLE} 
+        (查询日期, 商品69码, 仓库名称, 可用库存, 占用库存, 冻结库存, 在途库存, 实物库存, 总库存)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    // 6. 循环查询 (保持 V19 的 evaluate 和 过滤逻辑)
+    for (const code of uniqueCodes) {
+        try {
+            console.log(`➡️ 正在查询 69 码: ${code}`);
+            const inputSelector = 'input[placeholder*="商品69码"]';
+            await newPage.fill(inputSelector, '');
+            await newPage.fill(inputSelector, code);
+            const searchBtn = newPage.locator('button').filter({ hasText: '搜 索' }).first();
+            await searchBtn.click();
+            await newPage.waitForTimeout(1500); 
+
+            // V19 的瞬间抓取 + 脏数据过滤逻辑
+            const currentProductData = await newPage.evaluate(() => {
+                const rows = Array.from(document.querySelectorAll('.el-table__body-wrapper .el-table__body tr.el-table__row'));
+                const rawData = rows.map(row => {
+                    const cells = row.querySelectorAll('td');
+                    const getText = (idx) => cells[idx]?.innerText?.trim() || '0';
+                    return [
+                        cells[0]?.innerText?.trim() || '', 
+                        parseInt(getText(1)) || 0, 
+                        parseInt(getText(2)) || 0, 
+                        parseInt(getText(3)) || 0, 
+                        parseInt(getText(4)) || 0, 
+                        parseInt(getText(5)) || 0, 
+                        parseInt(getText(6)) || 0  
+                    ];
+                });
+                return rawData.filter(item => item[0] !== '生产调试共享仓（请勿动）');
+            });
+
+            if (currentProductData.length === 0) {
+                console.log(`   - ⚠️ 未找到 [${code}] 的有效库存记录`);
+                continue;
+            }
+
+            // 执行入库
+            const transaction = db.transaction((dataList) => {
+                for (const data of dataList) {
+                    insertStmt.run(todayStr, code, ...data);
+                }
+            });
+            transaction(currentProductData);
+            console.log(`   ✅ 已更新/插入 ${currentProductData.length} 条数据。`);
+
+        } catch (err) {
+            console.error(`   ❌ 查询 69 码 [${code}] 出错: ${err.message}`);
+        }
+    }
+
+    await newPage.close();
+    db.close();
+    console.log('--- 中央库存查询任务结束 ---');
+}
+
+
 async function main() {
     // 检查环境变量
     if (!VIOMI_USERNAME || !VIOMI_PASSWORD) { console.error('错误：请先设置 VIOMI_USERNAME 和 VIOMI_PASSWORD 环境变量。'); process.exit(1); }
@@ -681,116 +893,106 @@ async function main() {
 
     const missingDates = requiredDates.filter(date => !existingDatesInDb.has(date));
 
-    // 路径 A: 无需执行下载任务
-    if (missingDates.length === 0) {
-        console.log('👍 数据库中的数据已是最新且完整，无需执行日常下载任务。');
-        
-        // 📌 改动位置 A: 如果日常下载流程跳过，直接执行数据覆盖修正
-        await overwriteSalesDataWithNonRefunds(ORDER_DB_FILE, ORDER_DB_TABLE, DB_FILE, DB_TABLE_NAME); 
-        // -------------------------------------------------------------
-        
-        console.log('脚本执行完毕。');
-        return;
-    }
-    console.log(`\n❗️ 在数据库中发现 ${missingDates.length} 个缺失的日期: [${missingDates.join(', ')}]`);
-
     // 检查本地文件内容，建立日期映射
     const localFileDateMap = mapFilesByDateContent(DOWNLOAD_DIRECTORY);
     
     const tasksToImportOnly = [];
     const tasksToDownload = [];
 
-    for (const date of missingDates) {
-        if (localFileDateMap.has(date)) {
-            tasksToImportOnly.push(localFileDateMap.get(date));
-        } else {
-            tasksToDownload.push(date);
+    // --- 任务分配逻辑 ---
+    // 1. 如果有缺失日期，尝试用本地文件补齐
+    if (missingDates.length > 0) {
+        console.log(`\n❗️ 在数据库中发现 ${missingDates.length} 个缺失的日期: [${missingDates.join(', ')}]`);
+        for (const date of missingDates) {
+            if (localFileDateMap.has(date)) {
+                tasksToImportOnly.push(localFileDateMap.get(date));
+            } else {
+                tasksToDownload.push(date);
+            }
         }
+    } else {
+        console.log('👍 数据库中的销售流量数据已是最新且完整。');
     }
 
-    // --- 任务分配与执行 ---
-    
+    // --- 步骤 A: 执行仅导入任务 ---
     if (tasksToImportOnly.length > 0) {
         console.log(`\n--- 步骤 A: 执行仅导入任务 (${tasksToImportOnly.length} 个) ---`);
-        console.log(`   - 待导入文件: [${tasksToImportOnly.map(p => path.basename(p)).join(', ')}]`);
         for (const filePath of tasksToImportOnly) {
             const importSuccess = await importExcelToDb(filePath);
-            
-            // [改动 5.2: 仅导入任务成功后执行归档]
             if (importSuccess) {
                 await moveFileToArchive(filePath, ARCHIVE_DIRECTORY);
             } else {
                 console.warn(`⚠️ 文件 [${path.basename(filePath)}] 导入数据库失败，跳过归档。`);
             }
         }
-        console.log('✅ 所有仅导入任务已完成。');
-    } else {
-        console.log('\nℹ️ 没有在本地发现内容日期匹配的、可直接导入的文件。');
     }
 
-    // 路径 B: 无需启动浏览器（全部通过本地文件补齐）
-    if (tasksToDownload.length === 0) {
-        console.log('\n👍 所有缺失数据均已通过本地文件补齐，无需下载。');
+    // --- 步骤 B: 启动浏览器 (如果有下载任务 或 有中央库存查询任务) ---
+    // 检查是否开启了任意平台的库存查询
+    const isInventoryTaskEnabled = Object.values(ENABLE_PLATFORMS).some(status => status === true);
+    
+    // 只有在 “需要下载销售报表” 或者 “需要查询库存” 时才启动浏览器
+    if (tasksToDownload.length > 0 || isInventoryTaskEnabled) {
+        console.log('\n🚀 正在启动浏览器 (原生模式)...');
         
-        // 📌 改动位置 B: 如果日常下载流程在此时跳过，执行数据覆盖修正
-        await overwriteSalesDataWithNonRefunds(ORDER_DB_FILE, ORDER_DB_TABLE, DB_FILE, DB_TABLE_NAME);
-        // -------------------------------------------------------------
-        
-        console.log('脚本执行完毕。');
-        return;
-    }
+        // [回归原生方案] 使用标准 chromium.launch，不加载本地配置，避免影响您原本的 Edge
+        const browser = await chromium.launch({ headless: false });
+        const context = await browser.newContext();
+        const page = await context.newPage();
+        console.log('✅ 浏览器启动成功。');
 
-    // 路径 C: 需要启动浏览器执行下载任务
-    console.log(`\n--- 步骤 B: 执行下载并导入任务 (${tasksToDownload.length} 个) ---`);
-    console.log(`   - 待下载日期: [${tasksToDownload.join(', ')}]`);
-
-    console.log('\n🚀 正在启动浏览器...');
-    const browser = await chromium.launch({ headless: false });
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    console.log('✅ 浏览器启动成功。');
-
-    try {
-        console.log('➡️ 正在登录系统...');
-        await page.goto('https://sky.viomi.com.cn/bi/dashboard/module?projectId=1&sourceId=3377&menuId=833');
-        await page.getByRole('textbox', { name: '用户名' }).fill(VIOMI_USERNAME);
-        await page.getByRole('textbox', { name: '密码' }).fill(VIOMI_PASSWORD);
-        await page.getByRole('button', { name: '登 录' }).click();
-        await page.waitForURL(/.*dashboard.*/, { timeout: 30000 });
-        await page.waitForLoadState('networkidle', { timeout: 60000 });
-        console.log('✅ 登录成功，页面已加载。');
-        
-        console.log('\n➡️ 开始按序执行下载任务...');
-        for (const dateString of tasksToDownload) {
-            const downloadResult = await downloadReportForDate(page, dateString);
-            if (downloadResult.success && downloadResult.savePath) {
-                const importSuccess = await importExcelToDb(downloadResult.savePath);
+        try {
+            // --- 任务 B-1: 拼多多报表下载 (Sky BI) ---
+            if (tasksToDownload.length > 0) {
+                console.log('➡️ 正在登录 Sky BI 系统...');
+                await page.goto('https://sky.viomi.com.cn/bi/dashboard/module?projectId=1&sourceId=3377&menuId=833');
+                await page.getByRole('textbox', { name: '用户名' }).fill(VIOMI_USERNAME);
+                await page.getByRole('textbox', { name: '密码' }).fill(VIOMI_PASSWORD);
+                await page.getByRole('button', { name: '登 录' }).click();
+                await page.waitForURL(/.*dashboard.*/, { timeout: 30000 });
+                await page.waitForLoadState('networkidle', { timeout: 60000 });
+                console.log('✅ 登录成功，页面已加载。');
                 
-                // [改动 5.3: 下载并导入任务成功后执行归档]
-                if (importSuccess) {
-                     await moveFileToArchive(downloadResult.savePath, ARCHIVE_DIRECTORY);
-                } else {
-                     console.warn(`⚠️ 文件 [${path.basename(downloadResult.savePath)}] 导入数据库失败，跳过归档。`);
+                console.log(`\n--- 执行下载并导入任务 (${tasksToDownload.length} 个) ---`);
+                for (const dateString of tasksToDownload) {
+                    const downloadResult = await downloadReportForDate(page, dateString);
+                    if (downloadResult.success && downloadResult.savePath) {
+                        const importSuccess = await importExcelToDb(downloadResult.savePath);
+                        if (importSuccess) {
+                             await moveFileToArchive(downloadResult.savePath, ARCHIVE_DIRECTORY);
+                        } else {
+                             console.warn(`⚠️ 文件 [${path.basename(downloadResult.savePath)}] 导入数据库失败，跳过归档。`);
+                        }
+                    } else {
+                        console.error(`❗ 日期 [${dateString}] 的任务处理失败，将继续下一个任务...`);
+                    }
                 }
-                
             } else {
-                console.error(`❗ 日期 [${dateString}] 的任务处理失败，将继续下一个任务...`);
+                console.log('\n--- 无需下载销售报表，跳过 Sky BI 登录 ---');
             }
-        }
-        console.log('\n✅ 所有下载任务执行完毕。');
 
-    } catch (error) {
-        console.error('❌ 脚本在主流程中执行出错:', error);
-    } finally {
-        await browser.close();
-        console.log('🔚 浏览器已关闭。');
-        
-        // 📌 改动位置 C: 确保在浏览器关闭后，执行数据覆盖修正
-        await overwriteSalesDataWithNonRefunds(ORDER_DB_FILE, ORDER_DB_TABLE, DB_FILE, DB_TABLE_NAME);
-        // -------------------------------------------------------------
-        
-        console.log('脚本执行结束。');
+            // --- 任务 B-2: 执行中央库存查询 (门户SSO跳转) ---
+            if (isInventoryTaskEnabled) {
+                // 使用当前的 page (可能已登录Sky BI，也可能是空白页) 和 context (用于捕获新窗口)
+                await syncCentralInventory(context, page);
+            } else {
+                console.log('\n--- 所有平台开关已关闭，跳过库存查询 ---');
+            }
+
+        } catch (error) {
+            console.error('❌ 脚本在浏览器任务中执行出错:', error);
+        } finally {
+            await browser.close();
+            console.log('🔚 浏览器已关闭。');
+        }
+    } else {
+        console.log('\n👍 无需下载报表且未启用库存查询，跳过浏览器启动步骤。');
     }
+
+    // --- 步骤 C: 执行数据覆盖修正 (始终执行) ---
+    await overwriteSalesDataWithNonRefunds(ORDER_DB_FILE, ORDER_DB_TABLE, DB_FILE, DB_TABLE_NAME);
+    
+    console.log('脚本执行结束。');
 }
 
 // 运行主函数
