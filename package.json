@@ -18,7 +18,7 @@
     "@playwright/test": "^1.55.0",
     "adm-zip": "^0.5.16",
     "axios": "^1.13.2",
-    "better-sqlite3": "^12.2.0",
+    "better-sqlite3": "^12.6.2",
     "clipboardy": "^5.0.2",
     "electron": "^37.4.0",
     "jimp": "^1.6.0",
