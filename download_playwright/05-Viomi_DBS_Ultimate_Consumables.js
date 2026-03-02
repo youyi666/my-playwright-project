@@ -3,13 +3,17 @@
 // 1. [登录升级] 扫描页面所有可见 Input，自动识别账号/密码框填充，兼容性更强。
 // 2. [耗材修复] 使用 "包含耗材" 文字作为锚点，精准定位并解析紧随其后的复杂表格。
 // 3. [数据清洗] 专门处理 table-box / img-box 这种深层嵌套结构。
+// 4. [云端改造] 抛弃本地 SQLite，接入 Neon Serverless PostgreSQL。
 
 import { chromium } from 'playwright';
 import path from 'path';
 import * as fs from 'fs';
-import Database from 'better-sqlite3';
 import xlsx from 'xlsx';
 import { fileURLToPath } from 'url';
+import pg from 'pg';
+import 'dotenv/config'; // 自动读取同级目录下的 .env 文件
+
+const { Client } = pg;
 
 // --- 基础配置 ---
 const __filename = fileURLToPath(import.meta.url);
@@ -17,46 +21,12 @@ const __dirname = path.dirname(__filename);
 
 const VIOMI_USERNAME = process.env.VIOMI_USERNAME;
 const VIOMI_PASSWORD = process.env.VIOMI_PASSWORD;
+const DATABASE_URL = process.env.DATABASE_URL; // 从环境变量获取 Neon 数据库连接字符串
 
-const DB_FILE = path.join(__dirname, 'sql_data', 'ProductDataCenter.db');
 const TASKS_EXCEL_PATH = 'D:\\price_scraper\\tasks.xlsx';
 const DB_TABLE_NAME = 'dbs_product_details';
 
 // --- 辅助函数 ---
-
-function initDatabase() {
-    const dbDir = path.dirname(DB_FILE);
-    if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
-    const db = new Database(DB_FILE);
-    
-    // 确保包含 consumables_json 字段
-    const createSql = `
-        CREATE TABLE IF NOT EXISTS ${DB_TABLE_NAME} (
-            barcode TEXT PRIMARY KEY,
-            product_name TEXT,
-            product_model TEXT,
-            erp_code TEXT,
-            sku_id TEXT,
-            net_weight REAL,
-            gross_weight REAL,
-            dim_prod_l REAL, dim_prod_w REAL, dim_prod_h REAL,
-            dim_pkg_l REAL, dim_pkg_w REAL, dim_pkg_h REAL,
-            image_url TEXT,
-            is_wifi TEXT,
-            category_path TEXT,
-            unit TEXT,
-            consumables_json TEXT,  -- 存储耗材信息
-            market_price TEXT,
-            tax_rate TEXT,
-            purchase_entity TEXT,
-            software_entity TEXT,
-            update_time TEXT,
-            scrape_time TEXT
-        )
-    `;
-    db.exec(createSql);
-    db.close();
-}
 
 function parseDimensions(dimString) {
     if (!dimString || typeof dimString !== 'string') return { l: 0, w: 0, h: 0 };
@@ -80,17 +50,96 @@ function getTaskCodes() {
 // --- 主程序 ---
 
 async function main() {
-    if (!VIOMI_USERNAME || !VIOMI_PASSWORD) {
-        console.error('❌ 请设置环境变量 VIOMI_USERNAME 和 VIOMI_PASSWORD');
+    if (!VIOMI_USERNAME || !VIOMI_PASSWORD || !DATABASE_URL) {
+        console.error('❌ 请设置环境变量 VIOMI_USERNAME, VIOMI_PASSWORD 和 DATABASE_URL');
         process.exit(1);
     }
 
-    initDatabase();
     const taskCodes = getTaskCodes();
     if (taskCodes.length === 0) {
         console.log('⚠️ 没有任务，退出。');
         return;
     }
+
+    // --- 0. 初始化云端数据库连接 ---
+    console.log('➡️ 正在连接 Neon 云端数据库...');
+    const dbClient = new Client({
+        connectionString: DATABASE_URL,
+        ssl: { rejectUnauthorized: false } // Neon 等云端 DB 通常强制要求 SSL
+    });
+    
+    try {
+        await dbClient.connect();
+        console.log('   ✅ 数据库连接成功');
+        
+        // 确保云端表存在 (包含 consumables_json 字段)
+        const createSql = `
+            CREATE TABLE IF NOT EXISTS ${DB_TABLE_NAME} (
+                barcode TEXT PRIMARY KEY,
+                product_name TEXT,
+                product_model TEXT,
+                erp_code TEXT,
+                sku_id TEXT,
+                net_weight REAL,
+                gross_weight REAL,
+                dim_prod_l REAL, dim_prod_w REAL, dim_prod_h REAL,
+                dim_pkg_l REAL, dim_pkg_w REAL, dim_pkg_h REAL,
+                image_url TEXT,
+                is_wifi TEXT,
+                category_path TEXT,
+                unit TEXT,
+                consumables_json TEXT,  -- 存储耗材信息
+                market_price TEXT,
+                tax_rate TEXT,
+                purchase_entity TEXT,
+                software_entity TEXT,
+                update_time TEXT,
+                scrape_time TEXT
+            )
+        `;
+        await dbClient.query(createSql);
+    } catch (dbErr) {
+        console.error('❌ 数据库连接或初始化失败，请检查网络和 DATABASE_URL:', dbErr.message);
+        process.exit(1);
+    }
+
+    // 准备 PostgreSQL 的 UPSERT (插入或更新) 语句
+    const insertSql = `
+        INSERT INTO ${DB_TABLE_NAME} (
+            barcode, product_name, product_model, erp_code, sku_id,
+            net_weight, gross_weight, 
+            dim_prod_l, dim_prod_w, dim_prod_h,
+            dim_pkg_l, dim_pkg_w, dim_pkg_h,
+            image_url, is_wifi, category_path, unit,
+            consumables_json, 
+            market_price, tax_rate, purchase_entity, software_entity,
+            update_time, scrape_time
+        ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
+            $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
+            $21, $22, $23, $24
+        )
+        ON CONFLICT (barcode) DO UPDATE SET
+            product_name = EXCLUDED.product_name,
+            product_model = EXCLUDED.product_model,
+            erp_code = EXCLUDED.erp_code,
+            sku_id = EXCLUDED.sku_id,
+            net_weight = EXCLUDED.net_weight,
+            gross_weight = EXCLUDED.gross_weight,
+            dim_prod_l = EXCLUDED.dim_prod_l, dim_prod_w = EXCLUDED.dim_prod_w, dim_prod_h = EXCLUDED.dim_prod_h,
+            dim_pkg_l = EXCLUDED.dim_pkg_l, dim_pkg_w = EXCLUDED.dim_pkg_w, dim_pkg_h = EXCLUDED.dim_pkg_h,
+            image_url = EXCLUDED.image_url,
+            is_wifi = EXCLUDED.is_wifi,
+            category_path = EXCLUDED.category_path,
+            unit = EXCLUDED.unit,
+            consumables_json = EXCLUDED.consumables_json,
+            market_price = EXCLUDED.market_price,
+            tax_rate = EXCLUDED.tax_rate,
+            purchase_entity = EXCLUDED.purchase_entity,
+            software_entity = EXCLUDED.software_entity,
+            update_time = EXCLUDED.update_time,
+            scrape_time = EXCLUDED.scrape_time
+    `;
 
     const browser = await chromium.launch({ headless: false });
     const context = await browser.newContext();
@@ -151,20 +200,6 @@ async function main() {
         const searchTypeInput = dbsPage.getByRole('textbox', { name: '请选择' }).first();
         const searchContentInput = dbsPage.getByRole('textbox', { name: '多个请使用英文逗号分隔' });
         const searchBtn = dbsPage.getByRole('button', { name: '搜索' });
-
-        const db = new Database(DB_FILE);
-        const insertStmt = db.prepare(`
-            INSERT OR REPLACE INTO ${DB_TABLE_NAME} (
-                barcode, product_name, product_model, erp_code, sku_id,
-                net_weight, gross_weight, 
-                dim_prod_l, dim_prod_w, dim_prod_h,
-                dim_pkg_l, dim_pkg_w, dim_pkg_h,
-                image_url, is_wifi, category_path, unit,
-                consumables_json, 
-                market_price, tax_rate, purchase_entity, software_entity,
-                update_time, scrape_time
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
 
         // --- 3. 循环任务 ---
         for (const code of taskCodes) {
@@ -340,7 +375,8 @@ async function main() {
                     scrape_time: new Date().toLocaleString()
                 };
 
-                insertStmt.run(
+                // 执行异步的 PostgreSQL 数据插入/更新
+                const values = [
                     cleanData.barcode, cleanData.product_name, cleanData.product_model, cleanData.erp_code, cleanData.sku_id,
                     cleanData.net_weight, cleanData.gross_weight,
                     cleanData.dim_prod_l, cleanData.dim_prod_w, cleanData.dim_prod_h,
@@ -349,7 +385,9 @@ async function main() {
                     cleanData.consumables_json,
                     cleanData.market_price, cleanData.tax_rate, cleanData.purchase_entity, cleanData.software_entity,
                     cleanData.update_time, cleanData.scrape_time
-                );
+                ];
+                
+                await dbClient.query(insertSql, values);
 
                 console.log(`   ✅ 入库成功: ${cleanData.product_name}`);
                 if (pageData.consumables.length > 0) {
@@ -363,12 +401,12 @@ async function main() {
                 if (dbsPage.pages().length > 1) await dbsPage.pages()[1].close().catch(() => {});
             }
         }
-        db.close();
 
     } catch (e) {
         console.error('❌ 程序异常:', e);
     } finally {
         await browser.close();
+        await dbClient.end(); // 关闭数据库连接
         console.log('--- 任务结束 ---');
     }
 }

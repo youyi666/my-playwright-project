@@ -16,3 +16,4 @@ structure.txt
 edge_user_data/
 /sql_data
 *.db
+.env
