@@ -1,0 +1,1606 @@
+{
+    "goods_id": 908882576802,
+    "goods_commit_id": "186046372861",
+    "goods_commit_check": [],
+    "reject_reason": [],
+    "reject_status": "",
+    "check_status": 9,
+    "tiny_name": "",
+    "goods_name": "云米新品鲲鹏PRO油烟机28m³大吸力易清洁挥手智控烟灶联动小噪音",
+    "carousel_video": [
+        {
+            "source": null,
+            "status": 2,
+            "is_deleted": 0,
+            "check_comment": "通过",
+            "origin_url": null,
+            "id": 64549794252,
+            "url": "https://video5.pddpic.com/i1/2025-08-11/ca4b6420afc8e561fda8bf5e1c0f1d9e.mp4",
+            "video_url": "https://video5.pddpic.com/i1/2025-08-11/ca4b6420afc8e561fda8bf5e1c0f1d9e.mp4",
+            "extra_info": {
+                "video_cover_url": "https://img.pddpic.com/mms-material-img/i1/2025-08-11/ca4b6420afc8e561fda8bf5e1c0f1d9e.mp4.pdd.000001.jpeg",
+                "width": 800,
+                "height": 800
+            }
+        }
+    ],
+    "detail_video": [],
+    "goods_desc": "云米新品鲲鹏PRO油烟机28m³大吸力易清洁挥手智控烟灶联动小噪音",
+    "warm_tips": "",
+    "cat_id": 6105,
+    "cats": [
+        "大家电",
+        "厨房大电",
+        "油烟机",
+        null
+    ],
+    "image_url": "",
+    "oversea_goods": {},
+    "spu": {},
+    "isbn_properties_related": {
+        "isInit": true
+    },
+    "propertys_standard": [],
+    "is_draft": false,
+    "goods_name_prefix": "",
+    "name_prefix": "",
+    "size_spec_id": null,
+    "is_gold_price_matched": null,
+    "hasBatchEnter": false,
+    "instruction_vo": {
+        "template_id": null,
+        "template_status": -1,
+        "template_name": null,
+        "rejected_reason": null
+    },
+    "ai_carousel_gallery": [],
+    "explanation_video": [],
+    "tag_price_gallery": [],
+    "pack_label_image": [],
+    "medical_device_image": [],
+    "ingredient_gallery": [],
+    "nutrition_gallery": [],
+    "ai_goods_video": [],
+    "third_type": 0,
+    "cat_ids": [
+        6076,
+        6103,
+        6105,
+        0
+    ],
+    "bad_fruit_claim": 0,
+    "booking_notes": {},
+    "instruction_template_id": null,
+    "propertys_tid": 54221,
+    "propertys_edit_search_spu": false,
+    "service_time": 1773639463566,
+    "electric_status": 0,
+    "isGoodsLock": false,
+    "is_billion_subsidy": false,
+    "title_keywords": [
+        {
+            "keyword": "大吸力",
+            "source": "6",
+            "hot": false,
+            "rk": 0,
+            "bad_keyword": null,
+            "good_tag_desc": null,
+            "bad_tag_desc": null
+        },
+        {
+            "keyword": "油烟机",
+            "source": "6",
+            "hot": false,
+            "rk": 1,
+            "bad_keyword": null,
+            "good_tag_desc": null,
+            "bad_tag_desc": null
+        },
+        {
+            "keyword": "静音",
+            "source": "6",
+            "hot": false,
+            "rk": 2,
+            "bad_keyword": null,
+            "good_tag_desc": null,
+            "bad_tag_desc": null
+        },
+        {
+            "keyword": "厨房",
+            "source": "6",
+            "hot": false,
+            "rk": 3,
+            "bad_keyword": null,
+            "good_tag_desc": null,
+            "bad_tag_desc": null
+        },
+        {
+            "keyword": "云米",
+            "source": "6",
+            "hot": false,
+            "rk": 4,
+            "bad_keyword": null,
+            "good_tag_desc": null,
+            "bad_tag_desc": null
+        },
+        {
+            "keyword": "壁挂式",
+            "source": "6",
+            "hot": false,
+            "rk": 5,
+            "bad_keyword": null,
+            "good_tag_desc": null,
+            "bad_tag_desc": null
+        },
+        {
+            "keyword": "家用",
+            "source": "6",
+            "hot": false,
+            "rk": 6,
+            "bad_keyword": null,
+            "good_tag_desc": null,
+            "bad_tag_desc": null
+        },
+        {
+            "keyword": "强力",
+            "source": "6",
+            "hot": false,
+            "rk": 7,
+            "bad_keyword": null,
+            "good_tag_desc": null,
+            "bad_tag_desc": null
+        }
+    ],
+    "title_recommend": "大吸力油烟机静音厨房云米壁挂式家用强力",
+    "imageEnhanceGray": false,
+    "materialModalAbGray": true,
+    "materialReplaceTagGray": true,
+    "aiGray": true,
+    "materialShowTagGray": true,
+    "hide_apply": false,
+    "showGoodsInstruction": true,
+    "decorationCanEdit": true,
+    "decorationDetail": [
+        {
+            "floor_id": 101176425248,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 0,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-09-18/34ce9388-f0ea-492a-afc6-40ab0d7582c2.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1244,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425249,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 1,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/5ad8ffe5-35a4-4baa-b361-9434a8697f0f.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 862,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425250,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 2,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/9ed8b729-63b3-4e8a-9a1e-646ae6fa076a.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1038,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425251,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 3,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/1ab8f457-5715-4d38-942a-f88694ccf463.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1103,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425252,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 4,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/32391366-6c84-4186-a098-8a34d012f5d1.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1351,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425253,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 5,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/f5d4447c-d194-46bc-9bdc-d168ae13554f.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 710,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425254,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 6,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/759b2f74-db7c-47c2-959e-8aa684d02a3b.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1209,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425255,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 7,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/948087d0-a062-4f20-9131-708dc6293413.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1140,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425256,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 8,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/3c36aab9-ddd9-4931-82f8-b68889b884a3.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1127,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425257,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 9,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/62e61b16-0e6b-4e96-aaf0-f4870c6bd483.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1226,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425258,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 10,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/ad8138c7-6b3f-461c-a323-e347f98debed.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1415,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425259,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 11,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/d60a8a89-f539-4c49-8fdd-07e80f920e5e.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1194,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425260,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 12,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/2c6e3dde-8148-4e2c-8e6b-cc52580edf61.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1415,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425261,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 13,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/garner-api-new/56d8e9e9d92104ed37fbd0bd6e53e5ba.jpeg",
+                    "file_id": null,
+                    "height": 1500,
+                    "width": 779,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425262,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 14,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/91ae20bc-d0d8-4a25-baaa-07218a82d05c.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1031,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425263,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 15,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/b3de47fe-f858-42b3-9d0c-ce4d0eeb62c1.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1278,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425264,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 16,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/cbcc4aa0-1b74-48b1-8fe9-0027bf5b55b7.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1127,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425265,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 17,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/78eafe65-a7c5-4a8f-88ed-e5cc244f78f7.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1472,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425266,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 18,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/garner-api-new/06e5c668009093bf5590ce619c60b884.jpeg",
+                    "file_id": null,
+                    "height": 1499,
+                    "width": 749,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425267,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 19,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/2c4d4d86-ba79-4232-9af8-5fd316ae6a2c.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1146,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425268,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 20,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/62613337-d447-4c2b-890c-7bbdf2ae83b8.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1450,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425269,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 21,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/ecbb498f-6c60-4351-9dc6-ac728fd67ca7.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1337,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425270,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 22,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/bde9d341-bb80-4951-b6f8-807feb0a8b4e.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 674,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425271,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 23,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-07-02/e8ba46d0-c309-4540-91ca-a4868c9f5853.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 942,
+                    "width": 790,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425272,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 24,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-08-07/ac079ae6-901e-4664-a06c-744d9e834fba.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 800,
+                    "width": 800,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425273,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 25,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-08-07/9d9a1d30-b1bf-4347-9a51-374002b4097e.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1226,
+                    "width": 750,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        },
+        {
+            "floor_id": 101176425274,
+            "key": "DecImage",
+            "type": "image",
+            "priority": 26,
+            "content_list": [
+                {
+                    "img_url": "https://img.pddpic.com/mms-material-img/2025-08-07/dc4c70d3-3605-43be-912b-e01e81148e22.jpeg.a.jpeg",
+                    "file_id": null,
+                    "height": 1196,
+                    "width": 750,
+                    "file_status": null,
+                    "goods_id": null,
+                    "goods_name": null,
+                    "show_price": null,
+                    "status": null,
+                    "min_on_sale_group_price": null,
+                    "text": null,
+                    "hot_zone_list": null,
+                    "text_module_details": null,
+                    "activity_sn": null,
+                    "combine_buy_element_dtolist": null
+                }
+            ],
+            "check_status": null,
+            "check_id": null,
+            "check_name": null,
+            "comment": null,
+            "if_have_template": null,
+            "floor_status": null,
+            "template_id": null,
+            "template_type": null,
+            "template_json": null
+        }
+    ],
+    "decorationPreview": "https://mobile.yangkeduo.com/comm_goods_decoration_preview.html?goods_id=908882576802&_oak_decoration_token=GracBCTXTmSOEOcEyQlIwhabgBbk01ftM42DHebOUcHbbzZHzSlV0moV/3/emzk1qiP+nmccNaGxXBefnBDAmQ==",
+    "must_have_spu": false,
+    "can_not_change_cat": false,
+    "can_not_change_spu": false,
+    "is_transfer_spu": false,
+    "size_parent_spec_id": null,
+    "is_shop": 1,
+    "goods_type": 1,
+    "invoice_status": 1,
+    "privacy_delivery": 0,
+    "invoice_mode": 2,
+    "zhi_huan_bu_xiu": 0,
+    "quan_guo_lian_bao": 0,
+    "second_hand": 0,
+    "is_two_num_group": false,
+    "is_pre_sale": 0,
+    "pre_sale_time": "",
+    "country_id": "0",
+    "origin_country_id": 0,
+    "warehouse": "",
+    "customs": "",
+    "is_customs": 0,
+    "shipment_limit_second": 86400,
+    "delivery_type": null,
+    "cost_template_id": 408681875243153,
+    "weight": "",
+    "is_all_weight_same": true,
+    "groups": {
+        "single_price": 0,
+        "group_price": 0,
+        "carnival_price": null,
+        "customer_num": 2,
+        "buy_limit": 999999,
+        "order_limit": 999999,
+        "regular_limit": null,
+        "regular_limit_duration": null,
+        "min_num_of_order": null,
+        "community_group_buying": 0
+    },
+    "is_folt": 1,
+    "is_refundable": 1,
+    "thawed_refund": 0,
+    "damage_claim": 0,
+    "lack_of_weight_claim": 0,
+    "goods_certificate": 0,
+    "goods_pattern": 8,
+    "customizable": 0,
+    "local_service_id_list": null,
+    "shop_group_id": 0,
+    "schedule_sale": {
+        "sale_type": 0
+    },
+    "card_verification_list": [],
+    "is_spring_festival_open_tag": false,
+    "transport_type_list": [],
+    "is_refundable_fifteen_day": 0,
+    "is_warranty_one_year": 0,
+    "medical_device_confirm": 0,
+    "extend_warranty_dto": {
+        "extend_warranty": 0
+    },
+    "is_refundable_thirty_day": 0,
+    "home_delivery_template_name": "",
+    "promise_delivery_template_name": "",
+    "invoice_mode_sub_type": null,
+    "is_certificate_provide": 0,
+    "isAddLocalCityGoods": false,
+    "is_customized": 0,
+    "isCoupon": false,
+    "allow_purchase_info_supply": false,
+    "effect_logistics_weight_limit": 50000,
+    "same_city_template_id": 0,
+    "is_default_template_id": 1,
+    "cost_template_error": "",
+    "allergy_refund": 0,
+    "is_wp_service": 0,
+    "is_size_change_casually": 0,
+    "origin_is_pre_sale": 0,
+    "goods_srv_templates": [],
+    "is_only_for_remote_area": false,
+    "default_template_gray": true,
+    "shipment_limit_second_origin_value": 86400,
+    "elec_goods_attributes": null,
+    "delivery_one_day": 0,
+    "is_sku_shipment": 0,
+    "mai_jia_zi_ti": null,
+    "shang_men_an_zhuang": null,
+    "song_huo_an_zhuang": null,
+    "song_huo_ru_hu": null,
+    "qualification_id_list": [],
+    "skus": [
+        {
+            "id": 3130367203043,
+            "sku_id": 1862393441308,
+            "limit_quantity": 999999,
+            "out_sku_sn": "6923185605379",
+            "is_onsale": 1,
+            "pre_sale_time": 0,
+            "multi_price_in_yuan": "2998",
+            "price_in_yuan": "2999",
+            "multi_price": 299800,
+            "price": 299900,
+            "quantity_delta": 0,
+            "thumb_url": "https://img.pddpic.com/mms-material-img/2025-06-17/fba0177b-5c85-47bc-a4c9-466dc5a51745.jpeg.a.jpeg",
+            "weight": 0,
+            "spec": [
+                {
+                    "parent_id": 1218,
+                    "parent_name": "款式",
+                    "spec_id": 29415756356,
+                    "spec_name": "小噪音大吸力VK807",
+                    "is_custom": 0
+                }
+            ],
+            "length": null,
+            "oversea_sku": {
+                "specifications": null,
+                "measurement_unit": null,
+                "taxation": null,
+                "record_id_list": null
+            },
+            "sku_srv_templates": "",
+            "shipment_limit_second_list": [],
+            "sku69_code": ""
+        }
+    ],
+    "market_price_in_yuan": "3000",
+    "market_price": 300000,
+    "out_goods_sn": "6923185605379",
+    "dead_line_seconds": 86399,
+    "two_pieces_discount": 95,
+    "is_size_spec_sync_detail": 1,
+    "gold_price_template_id": 0,
+    "processing_charges": 0,
+    "processing_charges_in_yuan": "0",
+    "processing_charges_type": 0,
+    "gallery": [
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2026-01-07/3e6c0e5f-198a-4e18-a455-a7e2223a7e26.jpeg.a.jpeg",
+            "type": 1,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/63da86c8-797f-49f2-b9e2-f4c862a132d3.jpeg.a.jpeg",
+            "type": 1,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-06-17/5e9f6653-c430-432a-880e-95925a297e8b.jpeg.a.jpeg",
+            "type": 1,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-06-17/33926a64-81e6-444d-aaad-049bd45edea4.jpeg.a.jpeg",
+            "type": 1,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-06-17/c8d90c58-454d-4346-8f60-faa4be7df654.jpeg.a.jpeg",
+            "type": 1,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-06-17/131beb5e-0f11-45ad-a421-00d352831a19.jpeg.a.jpeg",
+            "type": 1,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-06-17/108b984a-90e9-4fb2-b6ef-e6f9011b6a62.jpeg.a.jpeg",
+            "type": 1,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-06-17/34c4205d-16b2-49e3-8ffb-2f667f4a0ab9.jpeg.a.jpeg",
+            "type": 1,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-06-17/450a46a4-5ad9-4de4-b301-f831121073a4.jpeg.a.jpeg",
+            "type": 1,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-09-18/34ce9388-f0ea-492a-afc6-40ab0d7582c2.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/5ad8ffe5-35a4-4baa-b361-9434a8697f0f.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/9ed8b729-63b3-4e8a-9a1e-646ae6fa076a.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/1ab8f457-5715-4d38-942a-f88694ccf463.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/32391366-6c84-4186-a098-8a34d012f5d1.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/f5d4447c-d194-46bc-9bdc-d168ae13554f.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/759b2f74-db7c-47c2-959e-8aa684d02a3b.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/948087d0-a062-4f20-9131-708dc6293413.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/3c36aab9-ddd9-4931-82f8-b68889b884a3.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/62e61b16-0e6b-4e96-aaf0-f4870c6bd483.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/ad8138c7-6b3f-461c-a323-e347f98debed.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/d60a8a89-f539-4c49-8fdd-07e80f920e5e.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/2c6e3dde-8148-4e2c-8e6b-cc52580edf61.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/garner-api-new/56d8e9e9d92104ed37fbd0bd6e53e5ba.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/91ae20bc-d0d8-4a25-baaa-07218a82d05c.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/b3de47fe-f858-42b3-9d0c-ce4d0eeb62c1.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/cbcc4aa0-1b74-48b1-8fe9-0027bf5b55b7.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/78eafe65-a7c5-4a8f-88ed-e5cc244f78f7.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/garner-api-new/06e5c668009093bf5590ce619c60b884.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/2c4d4d86-ba79-4232-9af8-5fd316ae6a2c.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/62613337-d447-4c2b-890c-7bbdf2ae83b8.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/ecbb498f-6c60-4351-9dc6-ac728fd67ca7.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/bde9d341-bb80-4951-b6f8-807feb0a8b4e.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-07-02/e8ba46d0-c309-4540-91ca-a4868c9f5853.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-08-07/ac079ae6-901e-4664-a06c-744d9e834fba.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-08-07/9d9a1d30-b1bf-4347-9a51-374002b4097e.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/2025-08-07/dc4c70d3-3605-43be-912b-e01e81148e22.jpeg.a.jpeg",
+            "type": 2,
+            "file_id": null
+        },
+        {
+            "url": "https://img.pddpic.com/mms-material-img/i1/2025-08-11/ca4b6420afc8e561fda8bf5e1c0f1d9e.mp4.pdd.000001.jpeg",
+            "width": 800,
+            "height": 800,
+            "video_url": "https://video5.pddpic.com/i1/2025-08-11/ca4b6420afc8e561fda8bf5e1c0f1d9e.mp4",
+            "file_id": 64549794252,
+            "type": 6
+        }
+    ],
+    "is_sku_pre_sale": 0,
+    "is_group_pre_sale": 0,
+    "goods_properties": [
+        {
+            "template_pid": 479555,
+            "template_module_id": 73998,
+            "ref_pid": 310,
+            "pid": 5,
+            "vid": 8580,
+            "value": "",
+            "value_unit": "",
+            "content": "VIOMI/云米"
+        },
+        {
+            "template_pid": 479556,
+            "template_module_id": 73998,
+            "ref_pid": 311,
+            "pid": 6,
+            "vid": 0,
+            "value": "CXW-180-VK807",
+            "value_unit": ""
+        },
+        {
+            "template_pid": 479557,
+            "template_module_id": 73998,
+            "ref_pid": 482,
+            "pid": 93,
+            "vid": 24044,
+            "value": "",
+            "value_unit": "",
+            "content": "中国大陆"
+        },
+        {
+            "template_pid": 479558,
+            "template_module_id": 73998,
+            "ref_pid": 2393,
+            "pid": 40,
+            "vid": 166993,
+            "value": "",
+            "value_unit": "",
+            "content": "家用"
+        },
+        {
+            "template_pid": 479559,
+            "template_module_id": 73998,
+            "ref_pid": 421,
+            "pid": 59,
+            "vid": 0,
+            "value": "2025010716774297",
+            "value_unit": ""
+        },
+        {
+            "template_pid": 479560,
+            "template_module_id": 73998,
+            "ref_pid": 511,
+            "pid": 70,
+            "value": "",
+            "value_unit": "",
+            "content": ""
+        },
+        {
+            "template_pid": 479561,
+            "template_module_id": 73998,
+            "ref_pid": 542,
+            "pid": 16,
+            "vid": 17157,
+            "value": "",
+            "value_unit": "",
+            "content": "钢化玻璃"
+        },
+        {
+            "template_pid": 479562,
+            "template_module_id": 73998,
+            "ref_pid": 538,
+            "pid": 134,
+            "vid": 32859,
+            "value": "",
+            "value_unit": "",
+            "content": "支持"
+        },
+        {
+            "template_pid": 479563,
+            "template_module_id": 73998,
+            "ref_pid": 507,
+            "pid": 16,
+            "value": "",
+            "value_unit": "",
+            "content": ""
+        },
+        {
+            "template_pid": 479564,
+            "template_module_id": 73998,
+            "ref_pid": 550,
+            "pid": 130,
+            "vid": 32830,
+            "value": "",
+            "value_unit": "",
+            "content": "顶吸式"
+        },
+        {
+            "template_pid": 479565,
+            "template_module_id": 73998,
+            "ref_pid": 469,
+            "pid": 40,
+            "vid": 1121499,
+            "value": "",
+            "value_unit": "",
+            "content": "侧顶双吸"
+        },
+        {
+            "template_pid": 479566,
+            "template_module_id": 73998,
+            "ref_pid": 508,
+            "pid": 71,
+            "vid": 0,
+            "value": "28",
+            "value_unit": "m³/min"
+        },
+        {
+            "template_pid": 479567,
+            "template_module_id": 73998,
+            "ref_pid": 411,
+            "pid": 49,
+            "vid": 15072,
+            "value": "",
+            "value_unit": "",
+            "content": "一级"
+        },
+        {
+            "template_pid": 479568,
+            "template_module_id": 73998,
+            "ref_pid": 489,
+            "pid": 90,
+            "vid": 0,
+            "value": "897",
+            "value_unit": "mm"
+        },
+        {
+            "template_pid": 479569,
+            "template_module_id": 73998,
+            "ref_pid": 506,
+            "pid": 89,
+            "vid": 0,
+            "value": "375",
+            "value_unit": "mm"
+        },
+        {
+            "template_pid": 479570,
+            "template_module_id": 73998,
+            "ref_pid": 490,
+            "pid": 91,
+            "vid": 0,
+            "value": "645",
+            "value_unit": "mm"
+        },
+        {
+            "template_pid": 479571,
+            "template_module_id": 73998,
+            "ref_pid": 552,
+            "pid": 132,
+            "vid": 0,
+            "value": "53.5",
+            "value_unit": "dB"
+        },
+        {
+            "template_pid": 479572,
+            "template_module_id": 73998,
+            "ref_pid": 510,
+            "pid": 114,
+            "value": "",
+            "value_unit": "",
+            "content": ""
+        },
+        {
+            "template_pid": 479573,
+            "template_module_id": 73998,
+            "ref_pid": 3537,
+            "pid": 784,
+            "vid": 0,
+            "value": "GB/T4706.1-2024;GB/T4706.28-2024",
+            "value_unit": ""
+        },
+        {
+            "template_pid": 479574,
+            "template_module_id": 73998,
+            "ref_pid": 3538,
+            "pid": 316,
+            "vid": 0,
+            "value": "广东栗子科技有限公司GuangdongChestnutTechnologyCo.,Ltd.",
+            "value_unit": ""
+        }
+    ],
+    "is_goods_copy": null,
+    "is_auto_save": false,
+    "validate_message": "8ebd6b630d8c750adf0676f98628bb63308a19329ae1b25d103f12f67215b159",
+    "validate_message_v2": "4696e1e5d7159a8238a06e9209e129873ec9158d62b15325b38327a3e8bb1b49",
+    "crawlerInfo": "0asAfqndGclaF9EGVC7My97mqE47cKYA5UivEFmCVPTIxZLUmSK3E_zd8CsLU9E67y92qmpsympgJy6wUm7Jy2JkO92qQOM6rrGOqvWXZgPZuAjrL7Mg-F8ac9QuZpfNaGweYjLYAXvziqp6X3KXGinZjPKfhJxQ1new02dHkGG2tQdMPiw9xf4egJ62X1KXQGcIgjetBxRowuqy37emMUuP_TDXZ_tKUPHT8XDLD14sdQvPdGLLpwMQIrcnkqPw7jVYBoNVI-hfzUZ2lFB6X369pZh9awsh9cZ9thrEPYv0X5ro-HJrtH14qvnyddsCJ_j7tNuDTB7uzjakGALQ9ltMT6JD9-KNElO9wuz8x1aWNHyDWSAXWol8PzF1tWvt8kx_dikSyMFoByXbE9XYZkPySfqhr0qD-lxuFyzV9RIw7k9z3bJ5PYNKpX1z0IjaIqpYp3n7VGJQqFz-CUWZmRUN9cPMKgVqf0fZaO"
+}

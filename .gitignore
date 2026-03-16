@@ -17,3 +17,6 @@ edge_user_data/
 /sql_data
 *.db
 .env
+pdd_user_data
+pdd_user_data/
+pdd_user_data_profile
