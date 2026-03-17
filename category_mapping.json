@@ -27,7 +27,7 @@
     "净水器": {
         "direct_mapping": [
             { "pdd_key": "品牌", "jd_keywords": ["品牌"], "action": "replace", "replace_rule": { "云米（VIOMI）": "VIOMI/云米", "云米(VIOMI)": "VIOMI/云米", "云米 (VIOMI)": "VIOMI/云米" } },
-            { "pdd_key": "型号", "jd_keywords": ["水效网规格型号", "型号"], "action": "direct" },
+            { "pdd_key": "型号", "jd_keywords": ["型号", "水效网规格型号"], "action": "direct" },
             { "pdd_key": "通量", "jd_keywords": ["膜规格（通量）", "通量"], "action": "extract_number" },
             { "pdd_key": "额定出水量", "jd_keywords": ["制水流速（常温）", "制水流速"], "action": "math_multiply", "multiplier": 60 },
             { "pdd_key": "水效等级", "jd_keywords": ["水效等级"], "action": "replace", "replace_rule": { "水效": "" } },
