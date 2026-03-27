@@ -7,12 +7,14 @@ const xlsx = require('xlsx');
 const Database = require('better-sqlite3');
 
 // ======================= [全局配置区域] =======================
-// 1. 用户登录配置文件夹 (共用)
+// 1. 用户登录配置文件夹 (共用) - 强烈建议保留本地 User Data Dir 以复用登录状态
 const userDataDir = path.join(__dirname, 'PDD', 'pdd-auth-profile');
 
 // 2. 推广报表任务配置
 const PROMOTION_DOWNLOAD_FOLDER = path.join(__dirname, 'exc_data', '推广_商品数据', '拼多多');
 const PROMOTION_ARCHIVE_FOLDER = path.join(PROMOTION_DOWNLOAD_FOLDER, '已导入');
+
+// 注意提示：下方的 {DATE} 属于静态参数，在您后续的页面跳转或抓取逻辑中，需要替换为动态获取的日期字符串，防止代码失效
 const PROMOTION_TARGET_URL_TEMPLATE = 'https://yingxiao.pinduoduo.com/goods/report/promotion/overView?beginDate={DATE}&endDate={DATE}';
 const PROMOTION_CHECK_PAST_DAYS = 90; // 回溯检查的天数
 
@@ -24,10 +26,20 @@ const LONG_DELAY_MIN_MS = 35000;
 const LONG_DELAY_MAX_MS = 65000;
 
 // 4. 数据库配置
-const CENTRAL_DB_PATH = path.join(__dirname, 'sql_data', 'TmallDataCenter.db');
+// 逻辑修正：从 download_playwright 向上跳 3 级到达 WorkSpace 根目录，再进入数据库文件夹
+const CENTRAL_DB_PATH = path.join(
+    __dirname, 
+    '..', '..', '..', 
+    '00_Shared_Database数据库', 
+    'TmallDataCenter.db'
+);
+
 const DB_PROMOTION_TABLE_NAME = 'pdd_product_promotion'; // 推广报表表名
 const PROMOTION_DATE_HEADER = '统计日期'; // 用于查漏补缺的日期字段
 const pddPromoNumericColumns = ["花费(元)", "订单数", "成交金额(元)", "投产比", "点击量", "点击率(%)", "千次展现花费(元)"];
+
+// 打印最终解析出的绝对路径，运行脚本时你可以第一眼就看到路径对不对
+console.log(`[系统日志] 数据库预定路径已解析为: ${CENTRAL_DB_PATH}`);
 
 // ======================= [辅助函数] =======================
 

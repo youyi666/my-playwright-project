@@ -14,11 +14,21 @@ const Database = require('better-sqlite3');
 const AdmZip = require('adm-zip');
 
 // ======================= [全局配置区域] =======================
+// 1. 用户登录配置文件夹 (共用) - 保留本地 User Data Dir 以复用登录状态
 const userDataDir = path.join(__dirname, 'PDD', 'pdd-auth-profile');
 const ORDER_DOWNLOAD_FOLDER = path.join(__dirname, 'exc_data', '订单_订单查询');
 const ORDER_ARCHIVE_FOLDER = path.join(ORDER_DOWNLOAD_FOLDER, '已导入');
-const CENTRAL_DB_PATH = path.join(__dirname, 'sql_data', 'TmallDataCenter.db');
 
+// 2. 数据库配置 (动态路径平滑迭代)
+// 逻辑说明：向上跳 3 级到达 WorkSpace 根目录，然后进入共享数据库文件夹
+const CENTRAL_DB_PATH = path.join(
+    __dirname, 
+    '..', '..', '..', 
+    '00_Shared_Database数据库', 
+    'TmallDataCenter.db'
+);
+
+// 3. 目标页面与表单配置
 const ORDER_LIST_URL = 'https://mms.pinduoduo.com/orders/list?msfrom=mms_sidenav&tab=0'; 
 const EXPORT_RECORD_URL = 'https://mms.pinduoduo.com/orders/exportExcel?exportType=0';
 
@@ -27,6 +37,7 @@ const DB_ORDER_TABLE_NAME = 'pddorder';
 const ORDER_PRIMARY_KEY = '订单号';
 const ORDER_PAYMENT_DATE_HEADER = '支付日期'; 
 
+// 4. 行为模拟配置
 const SHORT_DELAY_MIN_MS = 3000;
 const SHORT_DELAY_MAX_MS = 7000;
 const HUMAN_LIKE_DELAY_MIN_MS = 500;

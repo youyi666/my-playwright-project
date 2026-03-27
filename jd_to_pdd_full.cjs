@@ -298,7 +298,7 @@ async function autoFillPinduoduo(page, cleanData) {
         const pageJD = await contextJD.newPage();
         
         // ⚠️ 替换为你要抓取的实际京东商品 SKU
-        const targetJdItemId = '10109665694149';
+        const targetJdItemId = '100166814921';
         let jdRawData = {};
 
         // 1. [实时监听] 拦截底层参数
@@ -519,7 +519,7 @@ async function autoFillPinduoduo(page, cleanData) {
         pagePDD = await contextPDD.newPage();
         
         // ⚠️ 在这里指定你需要修改的拼多多商品 ID
-        const targetPddItemId = '920818145583';
+        const targetPddItemId = '926574119933';
         await pagePDD.goto('https://mms.pinduoduo.com/goods/goods_list', { waitUntil: 'domcontentloaded' });
         
         console.log(`🔍 [自动化] 定位【商品ID】输入框...`);

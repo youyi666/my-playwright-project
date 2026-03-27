@@ -35,15 +35,23 @@ const ENABLE_PLATFORMS = {
     '天猫': true    // t
 };
 
-// --- 配置区域 ---
+// ======================= [全局配置区域] =======================
+// --- 配置区域 (基座代码完整保留) ---
+// 注意：请确保在脚本最顶部或统一入口处已执行 require('dotenv').config();
 const VIOMI_USERNAME = process.env.VIOMI_USERNAME;
 const VIOMI_PASSWORD = process.env.VIOMI_PASSWORD;
 
 // [改动 2.1: 下载目录 - 相对路径]
 const DOWNLOAD_DIRECTORY = path.join(__dirname, 'exc_data', '平台获取-商品销售流量', '拼多多');
 
-// [改动 2.2: 目标 DB 路径 - 绝对路径]
-const DB_FILE = 'C:\\Users\\Administrator\\my-playwright-project\\download_playwright\\sql_data\\TmallDataCenter.db';
+// [改动 2.2: 目标 DB 路径 - 绝对路径 -> 已升级为动态相对路径]
+// 逻辑说明：向上跳 3 级到达 WorkSpace 根目录，然后进入共享数据库文件夹
+const DB_FILE = path.join(
+    __dirname, 
+    '..', '..', '..', 
+    '00_Shared_Database数据库', 
+    'TmallDataCenter.db'
+);
 const DB_TABLE_NAME = 'pinduoduo_sales_flow'; // 目标表名
 
 // [改动 4.1: 新增归档目录配置]
@@ -69,7 +77,17 @@ const DB_COL_DATE = '日期'; // <--- 关键：数据库中的日期列名
 // --------------------------------------------------------------------------------------
 
 // 🚀 【新增：中央库存任务配置】
-const TASKS_EXCEL_PATH = 'D:\\price_scraper\\tasks.xlsx';
+// ======================= [任务文件配置区域] =======================
+// 动态路径解析：
+// 第 1 个 '..' -> 退回到 my-playwright-project
+// 第 2 个 '..' -> 退回到 03_Dev_自动化开发 (公共上级目录)
+// 随后进入并列的 price_scraper 文件夹锁定目标文件
+const TASKS_EXCEL_PATH = path.join(
+    __dirname, 
+    '..', '..', 
+    'price_scraper', 
+    'tasks.xlsx'
+);
 const INVENTORY_DB_TABLE = 'viomi_central_inventory';
 
 

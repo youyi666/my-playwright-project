@@ -21,8 +21,12 @@ const __dirname = path.dirname(__filename);
 const VIOMI_USERNAME = process.env.VIOMI_USERNAME;
 const VIOMI_PASSWORD = process.env.VIOMI_PASSWORD;
 
-// --- 路径配置 ---
-const DATABASE_PATH = path.join(__dirname, 'sql_data', 'TmallDataCenter.db');
+const DATABASE_PATH = path.join(
+    __dirname, 
+    '..', '..', '..', 
+    '00_Shared_Database数据库', 
+    'TmallDataCenter.db'
+);
 const DOWNLOAD_DIRECTORY = path.join(__dirname, 'exc_data', 'TOP20_Sniper');
 const ARCHIVE_DIRECTORY = path.join(DOWNLOAD_DIRECTORY, '已导入');
 
