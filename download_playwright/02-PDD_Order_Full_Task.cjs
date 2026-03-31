@@ -460,16 +460,20 @@ async function pddOrderTask(page) {
                 await page.goto(ORDER_LIST_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
                 // [核心修复1] 主动清理首屏弹窗
                 await tryClosePopups(page);
-                
+                await page.waitForTimeout(3000);
                 // [核心修复2] 归零与日期选择
                 await performReset(page);
+                await page.waitForTimeout(5000);
                 await selectDateRange(page, range.start, range.end);
                 
                 await page.getByRole('button', { name: '查询', exact: true }).click();
+                console.log(` -> 点击查询，等待结果加载...`);
                 await page.waitForTimeout(3000);
                 await page.getByRole('button', { name: '批量导出' }).click();
+                console.log(` -> 点击批量导出...`);
                 await page.waitForTimeout(2000);
-                await page.getByRole('button', { name: '生成报表' }).click();
+                console.log(` -> 点击生成报表...`);
+                await page.getByRole('button', { name: '生成报表', exact: true }).click();
 
                 // [核心修复3] 增强型频率限制检测
                 // 检测是否有 Toast 或 Modal 提示“频繁”
@@ -489,59 +493,61 @@ async function pddOrderTask(page) {
                 await page.goto(EXPORT_RECORD_URL, { waitUntil: 'domcontentloaded' });
                 
                 // ----------------------------------------------------
-                // 下载逻辑：智能等待 + 遍历查找
+                // 下载逻辑：智能等待 + 仅下载首个生成的报表
                 // ----------------------------------------------------
                 let file = null;
-                console.log(' -> ⏳ 正在等待“下载报表”按钮出现...');
+                console.log(' -> ⏳ 正在等待第一个“下载报表”按钮出现...');
+                
+                // 提前定义定位器，精准锁定页面上的第一个包含“下载报表”文本的按钮
+                const firstDownloadBtn = page.locator('button:has-text("下载报表")').first();
+
                 try {
-                    await page.waitForSelector('text=下载报表', { timeout: 100000 });
+                    // 严格等待第一个按钮在 DOM 中变为可见状态
+                    await firstDownloadBtn.waitFor({ state: 'visible', timeout: 100000 });
                 } catch (e) {
                     console.warn(' -> ⚠️ 等待超时，尝试点击“刷新”...');
                     const refreshBtn = page.getByText('刷新').or(page.getByText('查询')).first();
                     if (await refreshBtn.isVisible()) {
-                        await refreshBtn.click();
+                        await refreshBtn.click({ force: true });
                         await page.waitForTimeout(3000);
+                        // 刷新后再次尝试短暂等待按钮出现
+                        await firstDownloadBtn.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
                     }
                 }
-
-                const allButtons = page.getByTestId('beast-core-button');
-                const btnCount = await allButtons.count();
-                console.log(` -> 扫描到 ${btnCount} 个功能按钮，搜寻“下载报表”...`);
 
                 let downloadSuccess = false;
 
-                // 遍历所有按钮，找到属于我们的那一个
-                for (let i = 0; i < btnCount; i++) {
-                    const btn = allButtons.nth(i);
-                    const text = await btn.innerText().catch(() => '');
-                    
-                    if (text.includes('下载报表')) {
-                        console.log(` -> 🎯 尝试点击第 ${i+1} 个按钮 (下载报表)...`);
-                        try {
-                            const downloadPromise = page.waitForEvent('download', { timeout: 15000 });
-                            await btn.click({ force: true });
-                            const down = await downloadPromise;
-                            file = path.join(ORDER_DOWNLOAD_FOLDER, down.suggestedFilename());
-                            await down.saveAs(file);
-                            console.log(` ✅ 下载成功: ${path.basename(file)}`);
-                            downloadSuccess = true;
-                            break; 
-                        } catch (e) {
-                            console.warn(`    ⚠️ 点击了但未下载 (可能是他人的报表/无权限)，尝试下一个...`);
-                        }
+                // 判断第一个按钮是否真的存在并且可见
+                if (await firstDownloadBtn.isVisible()) {
+                    console.log(` -> 🎯 已检测到第一个“下载报表”按钮，尝试点击下载...`);
+                    try {
+                        const downloadPromise = page.waitForEvent('download', { timeout: 15000 });
+                        // 配合 force: true 强力点击，防止被浮层遮挡
+                        await firstDownloadBtn.click({ force: true });
+                        const down = await downloadPromise;
+                        file = path.join(ORDER_DOWNLOAD_FOLDER, down.suggestedFilename());
+                        await down.saveAs(file);
+                        console.log(` ✅ 下载成功: ${path.basename(file)}`);
+                        downloadSuccess = true;
+                    } catch (e) {
+                        console.error(` -> ❌ 点击了第一个按钮但未触发下载:`, e.message);
+                        // 如果有需要截图记录错误，可以取消下方注释
+                        // await page.screenshot({ path: `error_download_click_${Date.now()}.png`, fullPage: true });
                     }
+                } else {
+                    console.warn(` -> ⚠️ 页面上未能找到任何“下载报表”按钮。`);
                 }
 
-                // 如果这一页都没下载成功，说明由于之前的频率限制导致报表根本没生成，
+                // 如果未下载成功，说明由于之前的频率限制导致报表根本没生成，
                 // 或者生成失败了。抛出错误，重试当前任务。
                 if (!downloadSuccess) {
-                    throw new Error("遍历所有按钮均未触发下载，可能报表未生成。");
+                    throw new Error("首个“下载报表”按钮未触发下载或未找到，可能报表未生成。");
                 }
 
                 if (file) await importFileWithSupport(file);
                 
                 // 成功完成，退出重试循环，处理下一个 range
-                break; 
+                break;
 
             } catch (error) {
                 console.error(`\n❌ 失败: ${error.message}`);
