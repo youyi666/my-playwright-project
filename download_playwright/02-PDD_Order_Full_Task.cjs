@@ -6,18 +6,37 @@
 // 3. 频率限制 -> 增强型 Toast 捕获 + 倒计时冷却
 // 4. 数据脏读 -> 数据库查漏改为解析“订单号”推算日期
 
-const { chromium } = require('playwright');
+// PDD_Order_Full_Task_Final.js - 拼多多订单报表全自动下载入库脚本
+// [多店进阶版] 引入多配置轮询与防反爬策略
+
+// --- [增量模块 1: 引入防爬虫增强版 Playwright] ---
+const { chromium } = require('playwright-extra');
+const stealth = require('puppeteer-extra-plugin-stealth')();
+chromium.use(stealth);
+
 const fs = require('fs/promises');
 const path = require('path');
 const xlsx = require('xlsx');
 const Database = require('better-sqlite3');
 const AdmZip = require('adm-zip');
 
-// ======================= [全局配置区域] =======================
-// 1. 用户登录配置文件夹 (共用) - 保留本地 User Data Dir 以复用登录状态
-const userDataDir = path.join(__dirname, 'PDD', 'pdd-auth-profile');
+// ======================= [全局多店配置区域] =======================
+// [增量模块 2: 多店参数矩阵]
+// 你可以在这里无限增加新店铺，每个店铺必须有独立的 profile 文件夹来隔离登录态
+const STORE_CONFIGS = [
+    { 
+        storeName: '云米拼多多官方旗舰店', // 建议与原单店的名称对应
+        profileDir: path.join(__dirname, 'PDD', 'pdd-auth-profile') // 沿用老配置文件夹，免得重新登录
+    },
+    { 
+        storeName: '云米拼多多专卖店_新店', // 新店铺名称
+        profileDir: path.join(__dirname, 'PDD', 'pdd-auth-profile-newstore') // 全新的独立缓存文件夹
+    }
+];
+
 const ORDER_DOWNLOAD_FOLDER = path.join(__dirname, 'exc_data', '订单_订单查询');
 const ORDER_ARCHIVE_FOLDER = path.join(ORDER_DOWNLOAD_FOLDER, '已导入');
+// ... (下方的 CENTRAL_DB_PATH 等基座代码保持不动)
 
 // 2. 数据库配置 (动态路径平滑迭代)
 // 逻辑说明：向上跳 3 级到达 WorkSpace 根目录，然后进入共享数据库文件夹
@@ -305,7 +324,7 @@ async function scanAndImportLocalFiles() {
         console.error(` -> ⚠️ 扫描本地文件出错: ${e.message}`);
     }
 }
-async function importFileWithSupport(filePath) {
+async function importFileWithSupport(filePath, storeName = '未知店铺') {
     const db = getDbConnection();
     try {
         let finalExcelPath = filePath;
@@ -327,9 +346,10 @@ async function importFileWithSupport(filePath) {
         
         if (rawData.length > 0) {
             const beforeCount = db.prepare(`SELECT count(*) as c FROM "${DB_ORDER_TABLE_NAME}"`).get()?.c || 0;
-            processOrderDataForDatabase(rawData, path.basename(filePath), db);
+            // 核心变动：将 storeName 传给处理函数
+            processOrderDataForDatabase(rawData, path.basename(filePath), db, storeName);
             const afterCount = db.prepare(`SELECT count(*) as c FROM "${DB_ORDER_TABLE_NAME}"`).get()?.c || 0;
-            console.log(` ✅ 入库处理完成。📊 库内总数: ${beforeCount} -> ${afterCount}`);
+            console.log(` ✅ [${storeName}] 入库处理完成。📊 库内总数: ${beforeCount} -> ${afterCount}`);
         }
         
         // 归档
@@ -341,10 +361,12 @@ async function importFileWithSupport(filePath) {
     }
 }
 
-function processOrderDataForDatabase(rawData, fileName, db) {
+function processOrderDataForDatabase(rawData, fileName, db, storeName) {
     const cleaned = rawData.map(row => {
         const obj = {};
         for (const k in row) obj[String(k).trim()] = row[k];
+        // 核心注入：给每一行数据强行加上店铺标识
+        obj['店铺名称'] = storeName; 
         return obj;
     });
     const rows = cleaned.map(row => {
@@ -383,7 +405,7 @@ function processOrderDataForDatabase(rawData, fileName, db) {
 // ======================= [日期查漏] =======================
 
 // [核心修复4] 基于订单号的查漏逻辑
-async function getMissingDatesFromDatabase(daysAgo) {
+async function getMissingDatesFromDatabase(daysAgo, storeName) {
     const db = getDbConnection();
     const needed = new Set();
     const today = new Date();
@@ -399,7 +421,8 @@ async function getMissingDatesFromDatabase(daysAgo) {
         if(!check) return needed;
 
         // 只查订单号列，效率更高
-        const rows = db.prepare(`SELECT "${ORDER_PRIMARY_KEY}" FROM "${DB_ORDER_TABLE_NAME}"`).all();
+        const sql = `SELECT "${ORDER_PRIMARY_KEY}" FROM "${DB_ORDER_TABLE_NAME}" WHERE "店铺名称" = ? OR "店铺名称" IS NULL`;
+        const rows = db.prepare(sql).all(storeName);
         
         const exist = new Set();
         rows.forEach(r => {
@@ -434,14 +457,14 @@ function groupConsecutiveDates(set) {
 
 // ======================= [主流程] =======================
 
-async function pddOrderTask(page) {
+async function pddOrderTask(page, storeName) {
     // 1. 先把本地有的文件吃进去
     await scanAndImportLocalFiles(); 
 
     // 2. 吃完本地文件后，再去数据库算还需要查哪天
     // 这样如果本地文件补全了数据，就不会重复去网页下载了
     console.log(`\n--- 📦 [任务] 启动报表同步 (回溯 ${ORDER_CHECK_PAST_DAYS} 天) ---`);
-    const missing = await getMissingDatesFromDatabase(ORDER_CHECK_PAST_DAYS); // [cite: 86]
+    const missing = await getMissingDatesFromDatabase(ORDER_CHECK_PAST_DAYS, storeName);
     if (!missing.size) return console.log("✅ 数据库最新。");
 
     const ranges = groupConsecutiveDates(missing);
@@ -564,22 +587,49 @@ async function pddOrderTask(page) {
 }
 
 async function main() {
-    let context, page;
     try {
         await fs.mkdir(ORDER_DOWNLOAD_FOLDER, { recursive: true });
-        context = await chromium.launchPersistentContext(userDataDir, { 
-            headless: false, 
-            args: ['--start-maximized', '--disable-blink-features=AutomationControlled'], 
-            viewport: null, 
-            downloadsPath: ORDER_DOWNLOAD_FOLDER 
-        });
-        page = context.pages()[0] || await context.newPage();
-        await pddOrderTask(page);
+        
+        // 遍历所有配置的店铺
+        for (const config of STORE_CONFIGS) {
+            console.log(`\n======================================================`);
+            console.log(`🚀 开始执行店铺任务: 【${config.storeName}】`);
+            console.log(`📂 使用浏览器配置: ${config.profileDir}`);
+            console.log(`======================================================`);
+
+            let context = null;
+            let page = null;
+            
+            try {
+                // 为每个店铺启动独立的持久化上下文
+                context = await chromium.launchPersistentContext(config.profileDir, { 
+                    headless: false, 
+                    args: ['--start-maximized', '--disable-blink-features=AutomationControlled'], 
+                    viewport: null, 
+                    downloadsPath: ORDER_DOWNLOAD_FOLDER 
+                });
+                page = context.pages()[0] || await context.newPage();
+                
+                // 将 config.storeName 传递给任务函数，以便后续查漏和入库使用
+                await pddOrderTask(page, config.storeName); 
+                
+            } catch (storeError) {
+                console.error(`\n❌ 店铺 【${config.storeName}】 执行过程中发生严重错误:`, storeError.message);
+                // 截图保存错误状态以备排查
+                if (page) {
+                    await page.screenshot({ path: `error_${config.storeName}_${Date.now()}.png`, fullPage: true }).catch(()=>{});
+                }
+            } finally {
+                // 必须关闭当前店铺的浏览器，才能安全进入下一个店铺
+                if (context) await context.close();
+                console.log(`🏁 店铺 【${config.storeName}】 任务结束。`);
+            }
+        }
     } catch (e) {
-        console.error('\n❌ 错误:', e.message);
+        console.error('\n❌ 全局严重错误:', e.message);
     } finally {
-        if (context) await context.close();
         if (globalDb) globalDb.close();
+        console.log('所有店铺任务执行完毕。');
     }
 }
 

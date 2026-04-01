@@ -233,7 +233,7 @@ async function setFiltersAndQuery(page, dateStr, platformName) {
     
     await responsePromise; 
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(3000); // 宁可多等3秒，不要拿到旧数据
+    await page.waitForTimeout(1000); // 宁可多等3秒，不要拿到旧数据
 
     return true;
 }

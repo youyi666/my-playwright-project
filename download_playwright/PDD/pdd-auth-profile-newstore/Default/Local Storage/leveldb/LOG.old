@@ -1,0 +1,14 @@
+2026/03/31-16:37:15.559 a78 Reusing MANIFEST d:\WorkSpace\03_Dev_自动化开发\001号爬虫文件My-Playwright-Project\download_playwright\PDD\pdd-auth-profile-newstore\Default\Local Storage\leveldb/MANIFEST-000001
+2026/03/31-16:37:15.572 a78 Recovering log #21
+2026/03/31-16:37:15.602 a78 Level-0 table #24: started
+2026/03/31-16:37:15.688 a78 Level-0 table #24: 17059 bytes OK
+2026/03/31-16:37:15.851 a78 Delete type=0 #21
+2026/03/31-16:37:15.852 354c Compacting 4@0 + 1@1 files
+2026/03/31-16:37:16.175 354c Generated table #26@0: 5 keys, 17274 bytes
+2026/03/31-16:37:16.175 354c Compacted 4@0 + 1@1 files => 17274 bytes
+2026/03/31-16:37:16.217 354c compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/03/31-16:37:16.218 354c Delete type=2 #14
+2026/03/31-16:37:16.218 354c Delete type=2 #16
+2026/03/31-16:37:16.219 354c Delete type=2 #19
+2026/03/31-16:37:16.219 354c Delete type=2 #22
+2026/03/31-16:37:16.219 354c Delete type=2 #24

@@ -85,7 +85,7 @@ const DB_COL_DATE = '日期'; // <--- 关键：数据库中的日期列名
 const TASKS_EXCEL_PATH = path.join(
     __dirname, 
     '..', '..', 
-    'price_scraper', 
+    '002号爬虫文件-Price_Scraper', 
     'tasks.xlsx'
 );
 const INVENTORY_DB_TABLE = 'viomi_central_inventory';
