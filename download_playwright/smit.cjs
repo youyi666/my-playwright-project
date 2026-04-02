@@ -58,7 +58,7 @@ const path = require('path');
         console.log(`🔍 [自动化] 正在定位【商品ID】并搜索...`);
         const inputA = pageA.locator('div').filter({ hasText: /^商品ID$/ }).getByTestId('beast-core-input-htmlInput').first();
         await inputA.waitFor({ state: 'visible', timeout: 15000 }).catch(() => console.log('⚠️ 等待输入框超时。'));
-        await inputA.fill('208073193570');
+        await inputA.fill('849000374681');
         
         await inputA.evaluate(node => {
             node.dispatchEvent(new Event('input', { bubbles: true }));
@@ -155,7 +155,7 @@ const path = require('path');
         await inputB.waitFor({ state: 'visible', timeout: 0 });
         
         console.log(`✅ [自动化] 确认已进入 B 店后台！继续执行自动填表...`);
-        await inputB.fill('925958299439');
+        await inputB.fill('925874862450');
         
         await inputB.evaluate(node => {
             node.dispatchEvent(new Event('input', { bubbles: true }));

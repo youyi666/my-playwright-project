@@ -122,9 +122,9 @@ function getDateFromOrderId(orderId) {
     return `${year}-${month}-${day}`;
 }
 
-// ======================= [UI 交互逻辑] =======================
+// ======================= [UI 交互逻辑 - 增量修复模块] =======================
 
-// [核心修复1] 弹窗清理逻辑
+// [核心修复1] 弹窗清理逻辑 - 增强版图标捕获
 async function tryClosePopups(page) {
     try {
         const closeSelectors = [
@@ -133,24 +133,31 @@ async function tryClosePopups(page) {
             'button[aria-label="Close"]',
             'button:has-text("知道了")',
             'button:has-text("关闭")',
-            '.u-icon-close' // 补充常见的关闭图标类名
+            '.u-icon-close', // 补充常见的关闭图标类名
+            // [增量] 增加更深层的弹窗 SVG 图标定位
+            '.beast-core-modal svg', 
+            '.ant-modal-close-icon'
         ];
         for (const selector of closeSelectors) {
             // 只检测可见的
             const btn = page.locator(selector).first();
             if (await btn.isVisible({ timeout: 500 })) {
                 console.log(` -> 🛡️ 检测到干扰弹窗，尝试关闭...`);
+                // [增量] 优先强制点击，并触发底层原生事件
                 await btn.click({ force: true });
+                await btn.evaluate(node => node.dispatchEvent(new Event('click', { bubbles: true }))).catch(() => {});
                 await page.waitForTimeout(500);
             }
         }
     } catch (e) {}
 }
 
-// [核心修复2] 强力开门函数：解决“点击日期输入框被吞”的问题
+// [核心修复2] 强力开门函数：解决“点击日期输入框被吞”的问题 - 引入底层事件与容错截图
 async function ensureCalendarOpen(page) {
     const calendarContainer = page.locator('[data-testid="beast-core-portal"]');
     const dateInput = page.locator('input[data-testid="beast-core-rangePicker-htmlInput"]');
+    // [增量] 寻找输入框旁边的日历图标 SVG，点击图标的成功率远高于点击输入框文本层
+    const dateIcon = page.locator('.beast-core-rangePicker-suffix svg, .beast-core-rangePicker-icon svg').first();
 
     // 如果已经开了，直接返回
     if (await calendarContainer.isVisible()) return;
@@ -158,16 +165,31 @@ async function ensureCalendarOpen(page) {
     // 最多重试 3 次，间隔递增
     for (let i = 1; i <= 3; i++) {
         try {
-            await dateInput.click({ force: true }); 
+            // [增量] 每次尝试点击前，先扫雷，防止延迟弹窗遮挡
+            await tryClosePopups(page);
+
+            if (await dateIcon.count() > 0 && await dateIcon.isVisible()) {
+                await dateIcon.click({ force: true });
+            } else {
+                await dateInput.click({ force: true });
+                // [增量] 尝试底层数据绑定触发
+                await dateInput.evaluate(node => {
+                    node.dispatchEvent(new Event('focus'));
+                    node.dispatchEvent(new Event('click', { bubbles: true }));
+                }).catch(() => {});
+            }
+
             // 等待弹窗出现
-            await calendarContainer.waitFor({ state: 'visible', timeout: 2000 });
+            await calendarContainer.waitFor({ state: 'visible', timeout: 2500 });
             return;
         } catch (e) {
             console.warn(`   -> ⚠️ 点击被吞 (尝试 ${i}/3)，重试中...`);
-            await page.waitForTimeout(1000); // 冷却一下
+            // [增量] 加入错误截图逻辑防程序盲目崩溃
+            await page.screenshot({ path: `error_calendar_click_attempt_${i}_${Date.now()}.png`, fullPage: true }).catch(() => {});
+            await page.waitForTimeout(1500); // 冷却一下，增加延迟
         }
     }
-    throw new Error("UI死锁：尝试 3 次均无法打开日历面板");
+    throw new Error("UI死锁：尝试 3 次均无法打开日历面板 (已保存错误截图)");
 }
 
 async function performReset(page) {
@@ -457,45 +479,59 @@ function groupConsecutiveDates(set) {
 
 // ======================= [主流程] =======================
 
+// ======================= [主流程 - 增量修复模块] =======================
+
 async function pddOrderTask(page, storeName) {
     // 1. 先把本地有的文件吃进去
-    await scanAndImportLocalFiles(); 
+    await scanAndImportLocalFiles();
 
     // 2. 吃完本地文件后，再去数据库算还需要查哪天
     // 这样如果本地文件补全了数据，就不会重复去网页下载了
     console.log(`\n--- 📦 [任务] 启动报表同步 (回溯 ${ORDER_CHECK_PAST_DAYS} 天) ---`);
+
     const missing = await getMissingDatesFromDatabase(ORDER_CHECK_PAST_DAYS, storeName);
     if (!missing.size) return console.log("✅ 数据库最新。");
 
     const ranges = groupConsecutiveDates(missing);
+
     console.log(` -> 缺失 ${missing.size} 天，分 ${ranges.length} 批。`);
 
     // 遍历每一个缺失的时间段
     for (const range of ranges) {
         let attempt = 0;
+
         const maxAttempts = 2; // [核心修复1] 任务级重试
 
         while (attempt < maxAttempts) {
             attempt++;
+
             try {
                 console.log(`\n[执行] 正在处理: ${range.start} 至 ${range.end} (第 ${attempt} 次尝试)`);
-                
+
                 await page.goto(ORDER_LIST_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
                 // [核心修复1] 主动清理首屏弹窗
                 await tryClosePopups(page);
+
                 await page.waitForTimeout(3000);
+                
+                // [增量] 再次清理可能延迟加载的恶心弹窗
+                await tryClosePopups(page);
+
                 // [核心修复2] 归零与日期选择
                 await performReset(page);
+
                 await page.waitForTimeout(5000);
                 await selectDateRange(page, range.start, range.end);
                 
                 await page.getByRole('button', { name: '查询', exact: true }).click();
                 console.log(` -> 点击查询，等待结果加载...`);
                 await page.waitForTimeout(3000);
+
                 await page.getByRole('button', { name: '批量导出' }).click();
                 console.log(` -> 点击批量导出...`);
                 await page.waitForTimeout(2000);
                 console.log(` -> 点击生成报表...`);
+
                 await page.getByRole('button', { name: '生成报表', exact: true }).click();
 
                 // [核心修复3] 增强型频率限制检测
@@ -503,22 +539,26 @@ async function pddOrderTask(page, storeName) {
                 const errorToast = page.locator('.ant-message-notice, .beast-core-modal-content').filter({ 
                      hasText: /频繁|间隔|稍后|导出中/ 
                 }).first();
-                
+
                 // 给它一点时间出现
                 if (await errorToast.isVisible({ timeout: 5000 })) {
                     console.log(`\n🚨 触发频率限制保护！`);
+
                     // 进入 5分10秒 冷却
                     await countdown(310, "系统冷却中");
+
                     // 抛出错误以触发 while 循环的 retry，重新执行当前 range
                     throw new Error("Frequency limit triggered - cooling down");
+
                 }
 
                 await page.goto(EXPORT_RECORD_URL, { waitUntil: 'domcontentloaded' });
-                
+
                 // ----------------------------------------------------
                 // 下载逻辑：智能等待 + 仅下载首个生成的报表
                 // ----------------------------------------------------
                 let file = null;
+
                 console.log(' -> ⏳ 正在等待第一个“下载报表”按钮出现...');
                 
                 // 提前定义定位器，精准锁定页面上的第一个包含“下载报表”文本的按钮
@@ -527,14 +567,18 @@ async function pddOrderTask(page, storeName) {
                 try {
                     // 严格等待第一个按钮在 DOM 中变为可见状态
                     await firstDownloadBtn.waitFor({ state: 'visible', timeout: 100000 });
+
                 } catch (e) {
                     console.warn(' -> ⚠️ 等待超时，尝试点击“刷新”...');
+
                     const refreshBtn = page.getByText('刷新').or(page.getByText('查询')).first();
                     if (await refreshBtn.isVisible()) {
                         await refreshBtn.click({ force: true });
+
                         await page.waitForTimeout(3000);
                         // 刷新后再次尝试短暂等待按钮出现
                         await firstDownloadBtn.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+
                     }
                 }
 
@@ -543,43 +587,54 @@ async function pddOrderTask(page, storeName) {
                 // 判断第一个按钮是否真的存在并且可见
                 if (await firstDownloadBtn.isVisible()) {
                     console.log(` -> 🎯 已检测到第一个“下载报表”按钮，尝试点击下载...`);
+
                     try {
                         const downloadPromise = page.waitForEvent('download', { timeout: 15000 });
+
                         // 配合 force: true 强力点击，防止被浮层遮挡
                         await firstDownloadBtn.click({ force: true });
+
                         const down = await downloadPromise;
                         file = path.join(ORDER_DOWNLOAD_FOLDER, down.suggestedFilename());
                         await down.saveAs(file);
                         console.log(` ✅ 下载成功: ${path.basename(file)}`);
                         downloadSuccess = true;
+
                     } catch (e) {
                         console.error(` -> ❌ 点击了第一个按钮但未触发下载:`, e.message);
+
                         // 如果有需要截图记录错误，可以取消下方注释
-                        // await page.screenshot({ path: `error_download_click_${Date.now()}.png`, fullPage: true });
+                        await page.screenshot({ path: `error_download_click_${Date.now()}.png`, fullPage: true }).catch(() => {});
+
                     }
                 } else {
                     console.warn(` -> ⚠️ 页面上未能找到任何“下载报表”按钮。`);
+
                 }
 
                 // 如果未下载成功，说明由于之前的频率限制导致报表根本没生成，
                 // 或者生成失败了。抛出错误，重试当前任务。
                 if (!downloadSuccess) {
                     throw new Error("首个“下载报表”按钮未触发下载或未找到，可能报表未生成。");
+
                 }
 
-                if (file) await importFileWithSupport(file);
-                
+                // [增量修复] 补充传入 storeName，修复日志中出现“未知店铺”且写入脏数据的问题
+                if (file) await importFileWithSupport(file, storeName);
+
                 // 成功完成，退出重试循环，处理下一个 range
                 break;
 
             } catch (error) {
                 console.error(`\n❌ 失败: ${error.message}`);
-                
+
                 if (attempt < maxAttempts) {
                     console.log(' -> 🔄 准备刷新重试...');
+
                     await page.waitForTimeout(3000);
                 } else {
                     console.error(' -> 💀 达到最大重试次数，跳过此时间段。');
+
                 }
             }
         }
