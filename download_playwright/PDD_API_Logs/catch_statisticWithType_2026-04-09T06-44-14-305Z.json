@@ -1,0 +1,18 @@
+{
+  "time": "2026/4/9 14:44:14",
+  "url": "https://mms.pinduoduo.com/mars/app/order/statisticWithType",
+  "method": "POST",
+  "headers": {
+    "anti-content": "0asAfxnpIyloU99DKMm7f8XpTkZi1rJvsPslU2gg9XfFEddAO9GhurwvMLmB2aEi9yX76Y2nyJ9xu6wa05b04rza9mo8quiRW3xSZ4PURfaUtENlEtTYUpZfQthzgeKa4VUHEJ52PEU_diSXSbeOpQpP4gR5Iq37cSnD_pHWq37xRhOqveivxFkXFPdye9v7umOu4ZDK-rtfOfvsk6jccxRWP9DDYvzX86f-cxkVtg6uT-2W4NDeSHgOGK9wVP1CdooO2fEBFS2v0CQmTNQBx_sc-Kt1C6x5718A7E9T5GsSPe6dyE9pK9ias0zHSfWCPb8i-GxsyMM7dLGgkmHTHLFlRcAcH39-NmbIfL8EYpr5vICOxoNLjqRr7qEmkDTLO0PI_jb6sbbJpI_CHIgOVJhMHwrJhyyRx1NZAN3bTuTW8eYxf0fZoJ",
+    "sec-ch-ua-platform": "\"Windows\"",
+    "referer": "https://mms.pinduoduo.com/orders/list?msfrom=mms_sidenav&tab=0",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+    "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+    "content-type": "application/json",
+    "sec-ch-ua-mobile": "?0"
+  },
+  "payload": {
+    "subType": 5,
+    "additionalTypeSet": []
+  }
+}

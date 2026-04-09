@@ -1,0 +1,15 @@
+{
+  "time": "2026/4/9 14:44:13",
+  "url": "https://mms.pinduoduo.com/mars/shop/orderList/hasBanner",
+  "method": "POST",
+  "headers": {
+    "anti-content": "0asAfx5E-wCEgqJHXHSt_USOOG7YNyOjZoPYgHKYTmZoApN7QJNSKpdS-GiMXYZgoombI_ZcsxDStGbbHqdjGYgXIz_x4wD9aDOKJhu62IblYCN3PqnY9xXCE_s1e-eCD-e-kLVhD-KhkB3Ck-wUkvxTPn0xtM64Z8fFe-vVEavRDr3veU3lEMLKMSB4VIVTPoYqbHvcgPd09Jy0tavC9f-fOEtszE--C1l2Td31ABK_uLefW1-xheLx-EtBObAPDbRlCS3-u-K4hLKquM3-CIlBd97KhSD-C9n9gBsbX_yxtfX1fEB5EZ47PhNCOYNQ9QMqP54gtNP3JZpH1Gd64WcC4t0J4VoibadQNodah9lSFdhU60ljImXYH8Gm4NoXXafuPrqX00fmgqJOvjeHbjxDH6oFry7BBbaQ-2Z992UiMeJqf0fZac",
+    "sec-ch-ua-platform": "\"Windows\"",
+    "referer": "https://mms.pinduoduo.com/orders/list?msfrom=mms_sidenav&tab=0",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+    "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+    "content-type": "application/json",
+    "sec-ch-ua-mobile": "?0"
+  },
+  "payload": {}
+}

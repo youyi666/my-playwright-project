@@ -2,7 +2,7 @@ const { chromium } = require('playwright-extra');
 const stealth = require('puppeteer-extra-plugin-stealth')();
 const path = require('path');
 const Database = require('better-sqlite3');
-
+const fs = require('fs');
 // 启用隐身插件，抹除自动化特征
 chromium.use(stealth);
 
@@ -18,11 +18,30 @@ function getLocalMonitorDate(offsetDays = 0) {
 // =========================================================
 // 数据库初始化配置
 // =========================================================
-const dbPath = path.join(__dirname, 'xiaomi_products.db');
+// =========================================================
+// 数据库初始化配置 (动态路径平滑迭代)
+// =========================================================
+// 逻辑说明：向上跳 3 级到达 WorkSpace 根目录，然后进入共享数据库文件夹
+const dbDir = path.join(__dirname, '..', '..', '..', '00_Shared_Database数据库');
+
+// 容错机制：如果共享数据库文件夹物理上不存在，则主动创建它，防止 SQLite 直接写入时报错崩溃
+try {
+    if (!fs.existsSync(dbDir)) {
+        fs.mkdirSync(dbDir, { recursive: true });
+        console.log(`📁 共享目录不存在，已自动创建: ${dbDir}`);
+    }
+} catch (error) {
+    console.error(`❌ 创建共享数据库目录失败，请检查读写权限。报错信息: ${error.message}`);
+}
+
+// 指向统一的中心数据库文件
+const dbPath = path.join(dbDir, 'TmallDataCenter.db');
 const db = new Database(dbPath, { verbose: console.log });
 
+console.log(`🔗 数据库已成功挂载至中心位置: ${dbPath}`);
+
 db.exec(`
-    CREATE TABLE IF NOT EXISTS product_info (
+    CREATE TABLE IF NOT EXISTS "pdd市场监控" (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         product_id TEXT,        
         title TEXT,             
@@ -42,19 +61,19 @@ db.exec(`
 `);
 
 const insertProduct = db.prepare(`
-    INSERT OR REPLACE INTO product_info 
+    INSERT OR REPLACE INTO "pdd市场监控"
     (product_id, title, price, total_sales, monthly_sales, weekly_sales, daily_sales_tag, hot_sales, grabbed_sales, daily_increment, product_url, monitor_date, scrape_time) 
     VALUES (@product_id, @title, @price, @total_sales, @monthly_sales, @weekly_sales, @daily_sales_tag, @hot_sales, @grabbed_sales, @daily_increment, @product_url, @monitor_date, datetime('now', 'localtime'))
 `);
 
 const getYesterdaySales = db.prepare(`
-    SELECT total_sales FROM product_info 
+    SELECT total_sales FROM "pdd市场监控"
     WHERE product_id = ? AND monitor_date = ?
 `);
 
 // 查询今天是否已经存过该商品 (防脏数据覆盖专用)
 const getTodaySales = db.prepare(`
-    SELECT total_sales, price FROM product_info 
+    SELECT total_sales, price FROM "pdd市场监控"
     WHERE product_id = ? AND monitor_date = ?
 `);
 

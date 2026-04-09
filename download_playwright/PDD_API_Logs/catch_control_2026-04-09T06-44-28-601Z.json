@@ -1,0 +1,15 @@
+{
+  "time": "2026/4/9 14:44:28",
+  "url": "https://mms.pinduoduo.com/fopen/order/grey/control",
+  "method": "POST",
+  "headers": {
+    "anti-content": "0asWfxUeM_VeGKzCnSuqmpL536ZZlxf1-8nzNKk0HGAkc3AaJ49rdUYozkBZhjOW3SC9RSzmfhkBiKeB7DqH7pW9G_m8_eaXa0pHjMSnMNgy5ckCY4A9AfcHGRkrVX10qqTMlb4LzOOc3SR9R-dXlWkRcKkBCDaEBsD9GdE9WFlw6Kkq87MVy2L0Ocs1Kc9WZHXWDk6wXI03__dpauUaYCMCvxXVC_m3Vjnhb6ypRmsdlC9i6qM382LlclJn08sIDnd_giFMV8MR3Z8VRFW1clVh1o101Uhk6KX12z2U2i9UqonvyhzTOvPinOfxKyVeSFJKbzA_F-fwmBzoS3hmHsWw7kWpMFRgQF-3RCI3xW-12ezLRAFs1Ce3xDSsWES8VPzx_AS1IdMfkD1-pwM8_KaD0tALRdwalt2bpsSmBZVeMZMmM3FkB1MDMshKBcKmM3ImMZheBkhkMwvyQ9wuWIxwFc5k7k-PzlsoMiRz7kQdIGRIkL2VFebyQXNNMPsox9swani98OsKP4k5mz4ZkMf1KfUwvsQDSZIFSAM5mL1OmMWOkM4ZHA65GRTUFfQkSDIVScIuSDR1KfY2c4sICIBfF90ws9ZQ0gcOpVdIIz2PLPVjqGoP0utYN93nIPax4o4QALFH4VjxNFtKnVVlNHmTpTsYYGjnX50DfvXffqYip80utn5JnOX06n4SDnN0gaq6llcmzWhJOebcR0JqibX00ue6Y9x994ZVcUbqf0f5at",
+    "sec-ch-ua-platform": "\"Windows\"",
+    "referer": "https://mms.pinduoduo.com/orders/list?msfrom=mms_sidenav&tab=0",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+    "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+    "content-type": "application/json",
+    "sec-ch-ua-mobile": "?0"
+  },
+  "payload": {}
+}

@@ -1,0 +1,15 @@
+{
+  "time": "2026/4/9 14:44:12",
+  "url": "https://mms.pinduoduo.com/tianmenmms/feature/switch/grab_order_switch",
+  "method": "POST",
+  "headers": {
+    "anti-content": "0asAfx5E-wCEtaNWepjf2XWaJGzQdav0XOEiYnOe-taHXHSt_USOOG7YNyOjZoPYgHKYTmZoApN7QJNSKpdS-GiMXYZgoombI_ZcsxDStGbbHqdjGYgXIz_x4wD9aDOKJhu62IblYCNeXanY4xXGTyOYXan0PaOu9JnYdJn0mynp98n09y4BVaZp5jzkg-HYtaHetYPiN8oqHYf_uTJjpnTy9C6zKOW71YCsLfCkt2MEty9s09YHvkSX0Qwv69HtXVf0dinNHbHypmjnOmYnFQTNQEPNW7wdm5fYg3vmginYHr7v60l9GSovucT2BC944SgfLEFs-v4OpwSw2pUzhTv3lDMBpV6wV_BAgdbx3hdsk7-lQU6s2MUwM-reLpbzkEz2MmTI7t2V6l8o-vaDFLgAJ-2EdLCm3_6Cd-BEr1OrdIGDExY4JLcrGJ9mPQx9wX092U0WgDPUX-Gc",
+    "sec-ch-ua-platform": "\"Windows\"",
+    "referer": "https://mms.pinduoduo.com/orders/list?msfrom=mms_sidenav&tab=0",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+    "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+    "content-type": "application/json",
+    "sec-ch-ua-mobile": "?0"
+  },
+  "payload": {}
+}
