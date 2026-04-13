@@ -31,7 +31,7 @@ const ORDER_DOWNLOAD_FOLDER = path.join(__dirname, 'exc_data', '订单_订单查
 const ORDER_ARCHIVE_FOLDER = path.join(ORDER_DOWNLOAD_FOLDER, '已导入');
 const ORDER_LIST_URL = 'https://mms.pinduoduo.com/orders/list?msfrom=mms_sidenav&tab=0'; 
 const EXPORT_RECORD_URL = 'https://mms.pinduoduo.com/orders/exportExcel?exportType=0';
-const ORDER_CHECK_PAST_DAYS = 90;
+const ORDER_CHECK_PAST_DAYS = 30;
 const DB_ORDER_TABLE_NAME = 'pddorder';
 const ORDER_PRIMARY_KEY = '订单号';
 const ORDER_PAYMENT_DATE_HEADER = '支付日期'; 
@@ -41,7 +41,7 @@ const PROMOTION_DOWNLOAD_FOLDER = path.join(__dirname, 'exc_data', '推广_商�
 const PROMOTION_ARCHIVE_FOLDER = path.join(PROMOTION_DOWNLOAD_FOLDER, '已导入');
 // 动态 URL 参数模板
 const PROMOTION_TARGET_URL_TEMPLATE = 'https://yingxiao.pinduoduo.com/goods/report/promotion/overView?beginDate={DATE}&endDate={DATE}';
-const PROMOTION_CHECK_PAST_DAYS = 90; 
+const PROMOTION_CHECK_PAST_DAYS = 15; 
 const DB_PROMOTION_TABLE_NAME = 'pdd_product_promotion'; 
 const PROMOTION_DATE_HEADER = '统计日期'; 
 const DOWNLOADS_PER_BATCH = 15;
