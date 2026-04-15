@@ -115,19 +115,58 @@ function getDbConnection() {
 async function tryClosePopups(page) {
     try {
         const closeSelectors = [
+            // 增量模块：优先精准定位 SVG 图标本身，避免只点击外层 Wrapper 导致失效
+            'svg[data-testid="beast-core-modal-icon-close"]',
+            // --- 基座代码：保留原有所有选择器 ---
             '[data-testid="beast-core-modal-icon-close"]', '.beast-core-modal-close',
             'button[aria-label="Close"]', 'button:has-text("知道了")', 'button:has-text("关闭")',
             '.u-icon-close', '.beast-core-modal svg', '.ant-modal-close-icon', 'i'
         ];
+
         for (const selector of closeSelectors) {
-            const btn = page.locator(selector).first();
-            if (await btn.isVisible({ timeout: 500 })) {
-                console.log(` -> 🛡️ 检测到干扰弹窗，尝试关闭...`);
-                await btn.click({ force: true }).catch(()=>{});
-                await page.waitForTimeout(500);
+            // 增量模块：不直接使用 .first()，而是获取所有匹配的元素集合
+            const btns = page.locator(selector);
+            const count = await btns.count();
+
+            // 遍历所有匹配的节点，防止第一个节点是隐藏残留的 DOM
+            for (let i = 0; i < count; i++) {
+                const btn = btns.nth(i);
+                
+                if (await btn.isVisible({ timeout: 500 })) {
+                    console.log(` -> 🛡️ 检测到可见的干扰弹窗 [${selector}]，尝试关闭...`);
+                    
+                    try {
+                        // 基座代码：保留原有的强力点击逻辑
+                        await btn.click({ force: true, timeout: 1000 }).catch(()=>{});
+                        await page.waitForTimeout(500);
+
+                        // 增量模块：如果常规的 .click() 失效（弹窗仍然可见），主动触发底层数据绑定
+                        if (await btn.isVisible({ timeout: 500 })) {
+                            console.log(` -> ⚠️ 常规点击疑似失效，尝试注入底层原生 click 事件...`);
+                            await btn.evaluate(node => {
+                                node.dispatchEvent(new MouseEvent('click', { 
+                                    bubbles: true, 
+                                    cancelable: true, 
+                                    view: window 
+                                }));
+                            });
+                            await page.waitForTimeout(500);
+                        }
+                    } catch (actionError) {
+                        // 增量模块：加入详细的日志与错误截图逻辑，防止 UI 交互异常导致无法排查
+                        console.log(` -> ❌ 点击操作异常: ${actionError.message}`);
+                        const timestamp = new Date().getTime();
+                        await page.screenshot({ 
+                            path: `error_popup_click_${timestamp}.png`, 
+                            fullPage: true 
+                        }).catch(() => {});
+                    }
+                }
             }
         }
-    } catch (e) {}
+    } catch (e) {
+        console.log(` -> ❌ tryClosePopups 运行发生全局错误: ${e.message}`);
+    }
 }
 
 async function moveFileToArchive(sourcePath, archiveDir, newFileName = null) {

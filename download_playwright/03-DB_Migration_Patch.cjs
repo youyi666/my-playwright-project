@@ -1,4 +1,4 @@
-// 03-DB_Migration_Patch.cjs - 数据库历史数据清洗与升级补丁 (视图避让与自动修复版)
+// 03-DB_Migration_Patch.cjs - 数据库历史数据清洗与升级补丁 (视图避让与自动修复版)-一次性的补丁文件
 
 const Database = require('better-sqlite3');
 const path = require('path');

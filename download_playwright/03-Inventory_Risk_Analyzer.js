@@ -21,10 +21,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // 数据库路径 (请确保路径正确)
-const DB_FILE = 'C:\\Users\\Administrator\\my-playwright-project\\download_playwright\\sql_data\\TmallDataCenter.db';
-
+const DB_FILE = path.join(__dirname, '..', '..', '..', '00_Shared_Database数据库', 'TmallDataCenter.db');
 // 任务列表路径 (用于筛选 Platform 和 [T])
-const TASKS_EXCEL_PATH = 'D:\\price_scraper\\tasks.xlsx';
+const TASKS_EXCEL_PATH = 'D:\\WorkSpace\\03_Dev_自动化开发\\002号爬虫文件-Price_Scraper\\tasks.xlsx';
 
 // 风险阈值设置 (你可以根据实际业务调整)
 const CONFIG = {

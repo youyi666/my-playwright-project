@@ -1,4 +1,4 @@
-// 01-PDD_Promotion_Task.js - 专注于拼多多推广报表下载与入库
+// 01-PDD_Promotion_Task.js - 专注于拼多多推广报表下载与入库-废弃不用了。
 
 const { chromium } = require('playwright');
 const fs = require('fs/promises');

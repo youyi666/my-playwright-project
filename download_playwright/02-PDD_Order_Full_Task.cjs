@@ -1,4 +1,4 @@
-// PDD_Order_Full_Task_Final.js - 拼多多订单报表全自动下载入库脚本
+// PDD_Order_Full_Task_Final.js - 拼多多订单报表全自动下载入库脚本-废弃不用了。
 // [多店进阶版] 引入多配置轮询、防反爬策略与 API 劫持技术
 
 const { chromium } = require('playwright-extra');
