@@ -57,14 +57,24 @@ const formatExactTime = (sec) => {
 };
 
 // --- [任务分发引擎] ---
-function getPendingTasks(db, startYear) {
-    console.log(`[${STORE_NAME}] 正在核对资金账单的任务检查点...`);
+// --- [任务分发器：增加 365 天最高历史边界限制] ---
+function getPendingTasks(db, accountConfig, startYear) {
+    const prefix = accountConfig.taskLogPrefix;
+    console.log(`[${STORE_NAME}] 核对【${accountConfig.accountName}】同步进度...`);
     const chunks = [];
+    
     let current = new Date(`${startYear}-01-01T00:00:00`);
     const now = new Date();
     const todayEndSec = Math.floor(now.getTime() / 1000);
     
-    const allLogs = db.prepare('SELECT * FROM sync_task_log_balance').all();
+    // 🌟 [增量修正]：强制将时间跨度控制在一年（365天）以内，规避平台冷数据报错
+    const oneYearAgo = new Date(now.getTime() - 365 * 24 * 3600 * 1000);
+    if (current < oneYearAgo) {
+        current = oneYearAgo;
+        console.log(`⚠️ [边界修正] 平台接口禁止查询1年前数据，起点已自动重置为: ${formatExactTime(current.getTime()/1000)}`);
+    }
+    
+    const allLogs = db.prepare('SELECT * FROM sync_task_log_all WHERE account_type = ?').all(accountConfig.accountName);
 
     while (current < now) {
         let nextMonth = new Date(current.getFullYear(), current.getMonth() + 1, 1);
@@ -73,17 +83,11 @@ function getPendingTasks(db, startYear) {
         
         const startSec = Math.floor(current.getTime() / 1000);
         const endSec = Math.floor(endOfCurrentMonth.getTime() / 1000);
-        chunks.push({
-            startStr: formatExactTime(startSec),
-            endStr: formatExactTime(endSec),
-            startSec: startSec,
-            endSec: endSec
-        });
+        chunks.push({ startStr: formatExactTime(startSec), endStr: formatExactTime(endSec), startSec, endSec });
         current = nextMonth;
     }
 
     const pendingTasks = [];
-
     for (const chunk of chunks.reverse()) {
         const exactMatch = allLogs.find(log => log.startSec === chunk.startSec && log.endSec === chunk.endSec);
         if (exactMatch) {
@@ -92,24 +96,16 @@ function getPendingTasks(db, startYear) {
             }
         } else {
             const hasFragments = allLogs.some(log => log.startSec >= chunk.startSec && log.endSec <= chunk.endSec);
-            if (!hasFragments) {
-                pendingTasks.push({ ...chunk, key: `${chunk.startSec}_${chunk.endSec}` });
-            }
+            if (!hasFragments) pendingTasks.push({ ...chunk, key: `${prefix}${chunk.startSec}_${chunk.endSec}` });
         }
     }
     
     const fragmentedTasks = allLogs.filter(log => log.status === 'PENDING');
     for (const frag of fragmentedTasks) {
         if (!pendingTasks.some(t => t.key === frag.chunk_key)) {
-            pendingTasks.push({
-                startStr: frag.startStr, endStr: frag.endStr,
-                startSec: frag.startSec, endSec: frag.endSec,
-                key: frag.chunk_key
-            });
+            pendingTasks.push({ startStr: frag.startStr, endStr: frag.endStr, startSec: frag.startSec, endSec: frag.endSec, key: frag.chunk_key });
         }
     }
-
-    console.log(`[${STORE_NAME}] 智能核对完毕，资金账单待执行区块: ${pendingTasks.length} 个。`);
     return pendingTasks.sort((a, b) => b.startSec - a.startSec);
 }
 

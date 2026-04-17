@@ -614,48 +614,10 @@ async function pddPromotionTask(page, storeName) {
 
 // ======================= [入口函数] =======================
 
-async function main() {
-    try {
-        await fs.mkdir(ORDER_DOWNLOAD_FOLDER, { recursive: true });
-        await fs.mkdir(PROMOTION_DOWNLOAD_FOLDER, { recursive: true });
+// ======================= [入口函数] =======================
+// 原有的 main 函数已删除，改为对外暴露核心逻辑
 
-        for (const config of STORE_CONFIGS) {
-            console.log(`\n======================================================`);
-            console.log(`🚀 开始执行综合业务轮询: 【${config.storeName}】`);
-            console.log(`======================================================`);
-
-            let context = null;
-            let page = null;
-            
-            try {
-                // 为当前店铺启动独立持久化上下文
-                context = await chromium.launchPersistentContext(config.profileDir, { 
-                    headless: false, 
-                    args: ['--start-maximized', '--disable-blink-features=AutomationControlled'], 
-                    viewport: null,
-                    // 将统一文件默认扔到订单目录，推广逻辑里会单独重定向
-                    downloadsPath: ORDER_DOWNLOAD_FOLDER 
-                });
-                page = context.pages()[0] || await context.newPage();
-                
-                // 串联执行双规任务
-                await pddOrderTask(page, config.storeName); 
-                await pddPromotionTask(page, config.storeName);
-                
-            } catch (storeError) {
-                console.error(`\n❌ 店铺 【${config.storeName}】 综合执行过程中发生异常:`, storeError.message);
-                if (page) await page.screenshot({ path: `error_unified_${config.storeName}_${Date.now()}.png`, fullPage: true }).catch(()=>{});
-            } finally {
-                if (context) await context.close();
-                console.log(`🏁 店铺 【${config.storeName}】 业务收尾完成。`);
-            }
-        }
-    } catch (e) {
-        console.error('\n❌ 全局严重错误:', e.message);
-    } finally {
-        if (globalDb) globalDb.close();
-        console.log('\n🎉 所有店铺【订单+推广】自动化数据同步任务圆满完成！');
-    }
-}
-
-main();
+module.exports = {
+    pddOrderTask,
+    pddPromotionTask
+};
